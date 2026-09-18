@@ -1,0 +1,4 @@
+ID;firstName;lastName;email;passwordHash;phoneNumber;idCardNumber;city;country_ID;profilePhoto
+aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;Amine;Benali;amine@example.com;hashed_pw_1;0612345678;ID12345;Casablanca;moro-moro-moro-moro-morocco0001;https://example.com/photos/amine.jpg
+bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb;Sara;Khaldi;sara@example.com;hashed_pw_2;0712345678;ID67890;Rabat;moro-moro-moro-moro-morocco0001;https://example.com/photos/sara.jpg
+cccccccc-cccc-cccc-cccc-cccccccccccc;Ali;Mansouri;ali@example.com;hashed_pw_3;0555555555;ID54321;Algiers;alge-alge-alge-alge-algeria001;https://example.com/photos/ali.jpg

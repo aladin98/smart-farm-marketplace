@@ -1,0 +1,4 @@
+ID;owner_ID;animalType_ID;variant_ID;customName;photoUrl;quantity;notes
+fa111111-1111-1111-1111-111111111111;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;aaaa1111-1111-1111-1111-111111111111;qv222222-2222-2222-2222-222222222222;;https://example.com/farm/quail-jumbo.jpg;50;Jumbo quails for production
+fa222222-2222-2222-2222-222222222222;bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb;aaaa1111-1111-1111-1111-111111111111;qv444444-4444-4444-4444-444444444444;;https://example.com/farm/quail-japanese.jpg;30;Japanese quails
+fa333333-3333-3333-3333-333333333333;cccccccc-cccc-cccc-cccc-cccccccccccc;dddd4444-4444-4444-4444-444444444444;;;https://example.com/farm/custom-animal.jpg;12;Custom animal created by user

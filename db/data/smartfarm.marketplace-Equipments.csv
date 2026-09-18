@@ -1,0 +1,4 @@
+ID;owner_ID;name;category;condition;quantity;photoUrl;notes
+eqp11111-1111-1111-1111-111111111111;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;Feeder Tray;Feeding;New;5;https://example.com/equipment/feeder.jpg;Used for quails
+eqp22222-2222-2222-2222-222222222222;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;Water Dispenser;Watering;Used;3;https://example.com/equipment/water.jpg;Plastic drinkers
+eqp33333-3333-3333-3333-333333333333;bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb;Heating Lamp;Heating;New;2;https://example.com/equipment/lamp.jpg;For chicks and incubation room

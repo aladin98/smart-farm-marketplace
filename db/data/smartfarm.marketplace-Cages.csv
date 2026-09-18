@@ -1,0 +1,4 @@
+ID;owner_ID;place_ID;cageNumber;capacity;notes
+cag11111-1111-1111-1111-111111111111;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;pla11111-1111-1111-1111-111111111111;C01;25;Quail cage near window
+cag22222-2222-2222-2222-222222222222;aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;pla11111-1111-1111-1111-111111111111;C02;30;Second quail cage
+cag33333-3333-3333-3333-333333333333;bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb;pla22222-2222-2222-2222-222222222222;C01;20;Chicken cage
