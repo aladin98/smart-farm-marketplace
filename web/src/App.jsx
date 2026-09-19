@@ -1,18 +1,46 @@
 import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Header from "./components/Header";
 import CategoryChips from "./components/CategoryChips";
 import ProductCard from "./components/ProductCard";
 import BottomNav from "./components/BottomNav";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import { categories } from "./data/products";
 import { fetchProductsByCountry } from "./services/api";
-import ProductDetails from "./pages/ProductDetails";
-import SellProduct from "./pages/SellProduct";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import { getCurrentUser } from "./services/auth";
 
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import ProductDetails from "./pages/ProductDetails";
+import SellProduct from "./pages/SellProduct";
+
+import MyFarm from "./pages/MyFarm";
+import MyAnimals from "./pages/MyAnimals";
+import AddAnimal from "./pages/AddAnimal";
+import EditAnimal from "./pages/EditAnimal";
+
+import MyIncubators from "./pages/MyIncubators";
+import AddIncubator from "./pages/AddIncubator";
+import IncubationCycles from "./pages/IncubationCycles";
+import AddIncubationCycle from "./pages/AddIncubationCycle";
+import EditIncubationCycle from "./pages/EditIncubationCycle";
+
+import MyPlaces from "./pages/MyPlaces";
+import AddPlace from "./pages/AddPlace";
+import EditPlace from "./pages/EditPlace";
+
+import MyCages from "./pages/MyCages";
+import AddCage from "./pages/AddCage";
+import EditCage from "./pages/EditCage";
+
+import MyEquipments from "./pages/MyEquipments";
+import AddEquipment from "./pages/AddEquipment";
+import EditEquipment from "./pages/EditEquipment";
+
 function MarketplaceHome() {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,12 +74,29 @@ function MarketplaceHome() {
       ? products
       : products.filter(
           (product) =>
-            product.category?.name?.toLowerCase() === selectedCategory.toLowerCase()
+            product.category?.name?.toLowerCase() ===
+            selectedCategory.toLowerCase()
         );
 
   return (
     <div className="min-h-screen bg-[#f7f8f2] text-gray-900">
       <Header currentUser={currentUser} />
+
+      <div className="px-4 mt-4 flex gap-3">
+        <button
+          onClick={() => navigate("/my-farm")}
+          className="bg-green-700 text-white px-5 py-3 rounded-full font-semibold"
+        >
+          My Farm
+        </button>
+
+        <button
+          onClick={() => navigate("/sell")}
+          className="bg-white text-green-700 border border-green-200 px-5 py-3 rounded-full font-semibold"
+        >
+          Sell Product
+        </button>
+      </div>
 
       <CategoryChips
         categories={categories}
@@ -61,7 +106,9 @@ function MarketplaceHome() {
 
       <div className="px-4 mt-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-green-950">Featured Listings</h2>
+          <h2 className="text-2xl font-bold text-green-950">
+            Featured Listings
+          </h2>
           <p className="text-sm text-green-700">
             {currentUser?.country?.name
               ? `Products from ${currentUser.country.name}`
@@ -92,11 +139,206 @@ function MarketplaceHome() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<MarketplaceHome />} />
-      <Route path="/product/:id" element={<ProductDetails />} />
-      <Route path="/sell" element={<SellProduct />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <MarketplaceHome />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/product/:id"
+        element={
+          <ProtectedRoute>
+            <ProductDetails />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/sell"
+        element={
+          <ProtectedRoute>
+            <SellProduct />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm"
+        element={
+          <ProtectedRoute>
+            <MyFarm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/animals"
+        element={
+          <ProtectedRoute>
+            <MyAnimals />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/animals/add"
+        element={
+          <ProtectedRoute>
+            <AddAnimal />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/animals/edit/:id"
+        element={
+          <ProtectedRoute>
+            <EditAnimal />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/incubators"
+        element={
+          <ProtectedRoute>
+            <MyIncubators />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/incubators/add"
+        element={
+          <ProtectedRoute>
+            <AddIncubator />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/incubators/:id/cycles"
+        element={
+          <ProtectedRoute>
+            <IncubationCycles />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/incubators/:id/cycles/add"
+        element={
+          <ProtectedRoute>
+            <AddIncubationCycle />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/incubators/:id/cycles/edit/:cycleId"
+        element={
+          <ProtectedRoute>
+            <EditIncubationCycle />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/places"
+        element={
+          <ProtectedRoute>
+            <MyPlaces />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/places/add"
+        element={
+          <ProtectedRoute>
+            <AddPlace />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/places/edit/:id"
+        element={
+          <ProtectedRoute>
+            <EditPlace />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/cages"
+        element={
+          <ProtectedRoute>
+            <MyCages />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/cages/add"
+        element={
+          <ProtectedRoute>
+            <AddCage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/cages/edit/:id"
+        element={
+          <ProtectedRoute>
+            <EditCage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/equipments"
+        element={
+          <ProtectedRoute>
+            <MyEquipments />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/equipments/add"
+        element={
+          <ProtectedRoute>
+            <AddEquipment />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-farm/equipments/edit/:id"
+        element={
+          <ProtectedRoute>
+            <EditEquipment />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

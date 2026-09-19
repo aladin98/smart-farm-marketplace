@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createProduct, fetchCategories } from "../services/api";
+import { getCurrentUser } from "../services/auth";
 
 function SellProduct() {
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
 
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [photoPreview, setPhotoPreview] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -16,8 +19,8 @@ function SellProduct() {
     age: "",
     description: "",
     price: "",
-    phoneNumber: "",
-    city: "",
+    phoneNumber: currentUser?.phoneNumber || "",
+    city: currentUser?.city || "",
     deliveryAvailable: false,
     photoUrl: "",
   });
@@ -52,10 +55,35 @@ function SellProduct() {
     }));
   }
 
+  function handlePhotoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      setPhotoPreview(base64String);
+
+      setFormData((prev) => ({
+        ...prev,
+        photoUrl: base64String,
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
     setMessage("");
+
+    if (!currentUser) {
+      setMessage("You must be logged in to publish a product.");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const payload = {
@@ -70,10 +98,8 @@ function SellProduct() {
         phoneNumber: formData.phoneNumber,
         city: formData.city,
         status: "Available",
-
-        // temporary fixed values until auth is implemented
-        seller_ID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-        country_ID: "moro-moro-moro-moro-morocco0001",
+        seller_ID: currentUser.ID,
+        country_ID: currentUser.country_ID,
         category_ID: formData.category_ID,
       };
 
@@ -103,11 +129,50 @@ function SellProduct() {
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm">
         <h1 className="text-3xl font-bold text-green-950 mb-2">Sell Product</h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 mb-2">
           Add your product details to publish it in the marketplace.
         </p>
 
+        {currentUser && (
+          <p className="text-sm text-green-700 mb-6">
+            Selling as: <strong>{currentUser.firstName} {currentUser.lastName}</strong>
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Product photo upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Product Photo
+            </label>
+
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-full h-52 rounded-2xl overflow-hidden border border-dashed border-green-300 bg-green-50 flex items-center justify-center">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt="Product Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-green-700 text-sm">
+                    No product photo selected
+                  </span>
+                )}
+              </div>
+
+              <label className="inline-block cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition">
+                Upload Product Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Name
@@ -228,20 +293,6 @@ function SellProduct() {
               checked={formData.deliveryAvailable}
               onChange={handleChange}
               className="w-5 h-5 accent-green-700"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Photo URL
-            </label>
-            <input
-              type="text"
-              name="photoUrl"
-              value={formData.photoUrl}
-              onChange={handleChange}
-              placeholder="Paste image URL for now"
-              className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             />
           </div>
 

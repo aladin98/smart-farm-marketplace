@@ -30,7 +30,10 @@ function BottomNav() {
         <span className="text-xs mt-1">Orders</span>
       </button>
 
-      <button className="flex flex-col items-center text-gray-500">
+      <button
+        onClick={() => navigate("/profile")}
+        className="flex flex-col items-center text-gray-500"
+      >
         <span>👤</span>
         <span className="text-xs mt-1">Profile</span>
       </button>

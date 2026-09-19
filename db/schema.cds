@@ -57,7 +57,12 @@ entity FarmAnimals : cuid, managed {
   owner        : Association to Users;
   animalType   : Association to AnimalTypes;
   variant      : Association to AnimalVariants;
+  place        : Association to Places;
+  cage         : Association to Cages;
   customName   : String(100);
+  groupNumber  : String(50);
+  age          : String(50);
+  sourceType   : String(50);
   photoUrl     : String(500);
   quantity     : Integer;
   notes        : String(1000);
