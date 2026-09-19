@@ -1,8 +1,11 @@
-function Header() {
+function Header({ currentUser }) {
+  const userName = currentUser ? currentUser.firstName : "Guest";
+
   return (
     <div className="bg-gradient-to-b from-green-100 to-[#f7f8f2] px-4 pt-6 pb-4 rounded-b-[30px] shadow-sm">
       <div className="flex items-center justify-between">
         <div>
+          <p className="text-sm text-green-700">Welcome, {userName}</p>
           <h1 className="text-3xl font-bold text-green-900">Smart Farm</h1>
           <p className="text-lg text-green-700 -mt-1">MarketPlace</p>
         </div>
