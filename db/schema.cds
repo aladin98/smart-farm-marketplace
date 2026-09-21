@@ -7,16 +7,18 @@ entity Countries : cuid, managed {
   name : localized String(100);
 }
 
-entity Users : cuid, managed {
-  firstName     : String(100);
-  lastName      : String(100);
-  email         : String(150);
-  passwordHash  : String(255);
-  phoneNumber   : String(30);
-  idCardNumber  : String(50);
-  city          : String(100);
-  country       : Association to Countries;
-  profilePhoto  : String(500);
+entity Users {
+  key ID            : UUID;
+  firstName         : String;
+  lastName          : String;
+  email             : String;
+  passwordHash      : String;
+  phoneNumber       : String;
+  idCardNumber      : String;
+  city              : String;
+  profilePhoto      : String;
+  role              : String;
+  country           : Association to Countries;
 }
 
 entity Categories : cuid, managed {

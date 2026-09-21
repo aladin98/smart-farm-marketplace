@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createProduct, fetchCategories } from "../services/api";
 import { getCurrentUser } from "../services/auth";
+import BottomNav from "../components/BottomNav";
+import { useTranslation } from "react-i18next";
 
 function SellProduct() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -80,7 +83,7 @@ function SellProduct() {
     setMessage("");
 
     if (!currentUser) {
-      setMessage("You must be logged in to publish a product.");
+      setMessage(t("mustBeLoggedInToPublish"));
       setSubmitting(false);
       return;
     }
@@ -105,45 +108,49 @@ function SellProduct() {
 
       await createProduct(payload);
 
-      setMessage("Product published successfully!");
+      setMessage(t("productPublishedSuccess"));
 
       setTimeout(() => {
         navigate("/");
       }, 1000);
     } catch (error) {
       console.error(error);
-      setMessage("Failed to publish product.");
+      setMessage(t("productPublishFailed"));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() => navigate("/")}
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm">
-        <h1 className="text-3xl font-bold text-green-950 mb-2">Sell Product</h1>
+        <h1 className="text-3xl font-bold text-green-950 mb-2">
+          {t("sellProduct")}
+        </h1>
         <p className="text-gray-600 mb-2">
-          Add your product details to publish it in the marketplace.
+          {t("sellProductSubtitle")}
         </p>
 
         {currentUser && (
           <p className="text-sm text-green-700 mb-6">
-            Selling as: <strong>{currentUser.firstName} {currentUser.lastName}</strong>
+            {t("sellingAs")}:{" "}
+            <strong>
+              {currentUser.firstName} {currentUser.lastName}
+            </strong>
           </p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Product photo upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Photo
+              {t("productPhoto")}
             </label>
 
             <div className="flex flex-col items-center gap-3">
@@ -151,18 +158,18 @@ function SellProduct() {
                 {photoPreview ? (
                   <img
                     src={photoPreview}
-                    alt="Product Preview"
+                    alt={t("productPhoto")}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-green-700 text-sm">
-                    No product photo selected
+                    {t("noProductPhotoSelected")}
                   </span>
                 )}
               </div>
 
               <label className="inline-block cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition">
-                Upload Product Photo
+                {t("uploadProductPhoto")}
                 <input
                   type="file"
                   accept="image/*"
@@ -175,14 +182,14 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name
+              {t("productName")}
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter product name"
+              placeholder={t("enterProductName")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -190,7 +197,7 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
+              {t("category")}
             </label>
             <select
               name="category_ID"
@@ -210,14 +217,14 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Age
+              {t("age")}
             </label>
             <input
               type="text"
               name="age"
               value={formData.age}
               onChange={handleChange}
-              placeholder="e.g. 6 weeks, 1 year"
+              placeholder={t("enterProductAge")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -225,14 +232,14 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+              {t("description")}
             </label>
             <textarea
               rows="4"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe your product"
+              placeholder={t("describeYourProduct")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             ></textarea>
@@ -240,14 +247,14 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price
+              {t("price")}
             </label>
             <input
               type="number"
               name="price"
               value={formData.price}
               onChange={handleChange}
-              placeholder="Enter price"
+              placeholder={t("enterPrice")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -255,14 +262,14 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
+              {t("phoneNumber")}
             </label>
             <input
               type="text"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              placeholder="Enter phone number"
+              placeholder={t("enterPhoneNumber")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -270,14 +277,14 @@ function SellProduct() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
+              {t("city")}
             </label>
             <input
               type="text"
               name="city"
               value={formData.city}
               onChange={handleChange}
-              placeholder="Enter city"
+              placeholder={t("enterCity")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -285,7 +292,7 @@ function SellProduct() {
 
           <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
             <span className="text-sm font-medium text-gray-700">
-              Delivery Available
+              {t("deliveryAvailable")}
             </span>
             <input
               type="checkbox"
@@ -307,10 +314,12 @@ function SellProduct() {
             disabled={submitting}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg mt-4 disabled:opacity-50"
           >
-            {submitting ? "Publishing..." : "Publish Product"}
+            {submitting ? t("publishing") : t("publishProduct")}
           </button>
         </form>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

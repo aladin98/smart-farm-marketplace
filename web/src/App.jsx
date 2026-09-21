@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
 import { useEffect, useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Header from "./components/Header";
@@ -5,10 +7,11 @@ import CategoryChips from "./components/CategoryChips";
 import ProductCard from "./components/ProductCard";
 import BottomNav from "./components/BottomNav";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import AddLearningArticle from "./pages/AddLearningArticle";
 import { categories } from "./data/products";
 import { fetchProductsByCountry } from "./services/api";
 import { getCurrentUser } from "./services/auth";
+import EditLearningArticle from "./pages/EditLearningArticle";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -38,9 +41,13 @@ import EditCage from "./pages/EditCage";
 import MyEquipments from "./pages/MyEquipments";
 import AddEquipment from "./pages/AddEquipment";
 import EditEquipment from "./pages/EditEquipment";
+import EditProfile from "./pages/EditProfile";
+import Learning from "./pages/Learning";
+import LearningArticleDetails from "./pages/LearningArticleDetails";
 
 function MarketplaceHome() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +58,7 @@ function MarketplaceHome() {
     async function loadProducts() {
       try {
         if (!currentUser?.country_ID) {
-          setError("No logged user country found.");
+          setError(t("noLoggedUserCountryFound"));
           setLoading(false);
           return;
         }
@@ -60,14 +67,18 @@ function MarketplaceHome() {
         setProducts(data);
       } catch (err) {
         console.error("Fetch products error:", err);
-        setError(`Could not load products: ${err.message}`);
+        setError(`${t("couldNotLoadProducts")}: ${err.message}`);
       } finally {
         setLoading(false);
       }
     }
 
     loadProducts();
-  }, [currentUser]);
+  }, [currentUser, t]);
+
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
+  }, [i18n.language]);
 
   const filteredProducts =
     selectedCategory === "All"
@@ -78,23 +89,38 @@ function MarketplaceHome() {
             selectedCategory.toLowerCase()
         );
 
+  function handleViewAll() {
+    setSelectedCategory("All");
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f8f2] text-gray-900">
       <Header currentUser={currentUser} />
 
-      <div className="px-4 mt-4 flex gap-3">
+      <div className="px-4 mt-4">
+        <LanguageSwitcher />
+      </div>
+
+      <div className="px-4 mt-4 flex flex-wrap gap-3">
         <button
           onClick={() => navigate("/my-farm")}
           className="bg-green-700 text-white px-5 py-3 rounded-full font-semibold"
         >
-          My Farm
+          {t("myFarm")}
         </button>
 
         <button
           onClick={() => navigate("/sell")}
           className="bg-white text-green-700 border border-green-200 px-5 py-3 rounded-full font-semibold"
         >
-          Sell Product
+          {t("sellProduct")}
+        </button>
+
+        <button
+          onClick={() => navigate("/learning")}
+          className="bg-white text-green-700 border border-green-200 px-5 py-3 rounded-full font-semibold"
+        >
+          {t("learning")}
         </button>
       </div>
 
@@ -104,25 +130,45 @@ function MarketplaceHome() {
         onSelectCategory={setSelectedCategory}
       />
 
-      <div className="px-4 mt-6 flex items-center justify-between">
+      <div className="px-4 mt-6 flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-green-950">
-            Featured Listings
+            {t("featuredListings")}
           </h2>
           <p className="text-sm text-green-700">
             {currentUser?.country?.name
-              ? `Products from ${currentUser.country.name}`
-              : "Fresh from trusted farms"}
+              ? `${t("productsFrom")} ${currentUser.country.name}`
+              : t("freshFromTrustedFarms")}
           </p>
+          {!loading && !error && (
+            <p className="text-xs text-gray-500 mt-1">
+              {t("productsFound", { count: filteredProducts.length })}
+            </p>
+          )}
         </div>
-        <button className="text-green-800 font-medium">View all</button>
+
+        <button
+          onClick={handleViewAll}
+          className="text-green-800 font-medium whitespace-nowrap"
+        >
+          {t("viewAll")}
+        </button>
       </div>
 
       <div className="px-4 mt-4 pb-28">
-        {loading && <p className="text-green-700">Loading products...</p>}
+        {loading && <p className="text-green-700">{t("loadingProducts")}</p>}
         {error && <p className="text-red-600">{error}</p>}
 
-        {!loading && !error && (
+        {!loading && !error && filteredProducts.length === 0 && (
+          <div className="bg-white rounded-[24px] p-6 text-center shadow-sm border border-green-50">
+            <p className="text-gray-700 font-medium">{t("noProductsFound")}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("tryAnotherSearch")}
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && filteredProducts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredProducts.map((product) => (
               <ProductCard key={product.ID} product={product} />
@@ -339,6 +385,49 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+  path="/profile/edit"
+  element={
+    <ProtectedRoute>
+      <EditProfile />
+    </ProtectedRoute>
+  }
+/>
+          <Route
+  path="/learning"
+  element={
+    <ProtectedRoute>
+      <Learning />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/learning/:id"
+  element={
+    <ProtectedRoute>
+      <LearningArticleDetails />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/learning/add"
+  element={
+    <ProtectedRoute>
+      <AddLearningArticle />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/learning/edit/:id"
+  element={
+    <ProtectedRoute>
+      <EditLearningArticle />
+    </ProtectedRoute>
+  }
+/>
+
     </Routes>
   );
 }

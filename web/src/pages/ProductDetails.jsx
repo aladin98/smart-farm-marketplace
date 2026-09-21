@@ -1,40 +1,47 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import fallbackImage from "../assets/images/fallback-product.jpg";
+import { getCurrencyByCountry } from "../utils/currency";
+import BottomNav from "../components/BottomNav";
+import { useTranslation } from "react-i18next";
 
 function ProductDetails() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const product = state?.product;
+  const currency = getCurrencyByCountry(product?.country?.name);
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4 pb-24">
         <div className="text-center">
-          <p className="text-lg text-gray-700">Product not found.</p>
+          <p className="text-lg text-gray-700">{t("productNotFound")}</p>
           <button
             onClick={() => navigate("/")}
             className="mt-4 bg-green-700 text-white px-5 py-2 rounded-full"
           >
-            Back to Marketplace
+            {t("backToMarketplace")}
           </button>
         </div>
+
+        <BottomNav />
       </div>
     );
   }
 
   const sellerName = product.seller
     ? `${product.seller.firstName} ${product.seller.lastName}`
-    : "Unknown seller";
+    : t("unknownSeller");
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] pb-24">
       <div className="p-4">
         <button
           onClick={() => navigate("/")}
           className="mb-4 text-green-800 font-medium"
         >
-          ← Back
+          ← {t("back")}
         </button>
 
         <div className="bg-white rounded-[28px] overflow-hidden shadow-sm">
@@ -49,32 +56,38 @@ function ProductDetails() {
 
           <div className="p-5">
             <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-3">
-              {product.category?.name || "Uncategorized"}
+              {product.category?.name || t("uncategorized")}
             </span>
 
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
             <p className="text-green-700 text-3xl font-bold mt-3">
-              {product.price} MAD
+              {product.price} {currency}
             </p>
 
             <div className="mt-4 space-y-2 text-gray-600">
-              <p><strong>Age:</strong> {product.age}</p>
-              <p><strong>City:</strong> {product.city}</p>
-              <p><strong>Country:</strong> {product.country?.name || "N/A"}</p>
-              <p><strong>Delivery:</strong> {product.deliveryAvailable ? "Available" : "No"}</p>
-              <p><strong>Condition:</strong> {product.condition || "N/A"}</p>
+              <p><strong>{t("age")}:</strong> {product.age}</p>
+              <p><strong>{t("city")}:</strong> {product.city}</p>
+              <p><strong>{t("country")}:</strong> {product.country?.name || t("notAvailable")}</p>
+              <p>
+                <strong>{t("delivery")}:</strong>{" "}
+                {product.deliveryAvailable ? t("available") : t("no")}
+              </p>
+              <p>
+                <strong>{t("condition")}:</strong>{" "}
+                {product.condition || t("notAvailable")}
+              </p>
             </div>
 
             <div className="mt-5">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Description
+                {t("description")}
               </h2>
               <p className="text-gray-600">{product.description}</p>
             </div>
 
             <div className="mt-6 bg-green-50 rounded-2xl p-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Seller Information
+                {t("sellerInformation")}
               </h2>
 
               <div className="flex items-center gap-3">
@@ -89,18 +102,20 @@ function ProductDetails() {
                 <div>
                   <p className="font-semibold text-gray-900">{sellerName}</p>
                   <p className="text-sm text-gray-600">
-                    {product.phoneNumber || product.seller?.phoneNumber}
+                    {product.phoneNumber || product.seller?.phoneNumber || t("notAvailable")}
                   </p>
                 </div>
               </div>
 
               <button className="mt-4 w-full bg-green-700 text-white py-3 rounded-full font-medium">
-                Contact Seller
+                {t("contactSeller")}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

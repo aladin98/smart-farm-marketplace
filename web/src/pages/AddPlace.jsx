@@ -1,11 +1,14 @@
+import BottomNav from "../components/BottomNav";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { createPlace } from "../services/api";
+import { useTranslation } from "react-i18next";
 
 function AddPlace() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -30,7 +33,7 @@ function AddPlace() {
     setMessage("");
 
     if (!currentUser) {
-      setMessage("You must be logged in to add a place.");
+      setMessage(t("mustBeLoggedInToAddPlace"));
       setSubmitting(false);
       return;
     }
@@ -45,45 +48,47 @@ function AddPlace() {
 
       await createPlace(payload);
 
-      setMessage("Place added successfully!");
+      setMessage(t("placeAddedSuccessfully"));
 
       setTimeout(() => {
         navigate("/my-farm/places");
       }, 1000);
     } catch (error) {
       console.error("Add place error:", error);
-      setMessage(`Failed to add place: ${error.message}`);
+      setMessage(`${t("failedToAddPlace")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() => navigate("/my-farm/places")}
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-green-950 mb-2">Add Place</h1>
+        <h1 className="text-3xl font-bold text-green-950 mb-2">
+          {t("addPlace")}
+        </h1>
         <p className="text-gray-600 mb-6">
-          Add a new place or section in your farm.
+          {t("addPlaceSubtitle")}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Place Name
+              {t("placeName")}
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter place name"
+              placeholder={t("enterPlaceName")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -91,14 +96,14 @@ function AddPlace() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Place Number
+              {t("placeNumber")}
             </label>
             <input
               type="text"
               name="placeNumber"
               value={formData.placeNumber}
               onChange={handleChange}
-              placeholder="e.g. P01"
+              placeholder={t("placeNumberExample")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -106,14 +111,14 @@ function AddPlace() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+              {t("description")}
             </label>
             <textarea
               rows="4"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe this place"
+              placeholder={t("describeThisPlace")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             ></textarea>
           </div>
@@ -129,10 +134,12 @@ function AddPlace() {
             disabled={submitting}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
           >
-            {submitting ? "Adding..." : "Add Place"}
+            {submitting ? t("adding") : t("addPlace")}
           </button>
         </form>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

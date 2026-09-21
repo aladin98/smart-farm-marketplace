@@ -3,10 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { fetchEquipmentsByOwner, deleteEquipment } from "../services/api";
 import fallbackImage from "../assets/images/fallback-product.jpg";
+import PageHeader from "../components/PageHeader";
+import BottomNav from "../components/BottomNav";
+import { useTranslation } from "react-i18next";
 
 function MyEquipments() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [equipments, setEquipments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +19,7 @@ function MyEquipments() {
   useEffect(() => {
     async function loadEquipments() {
       if (!currentUser) {
-        setError("No logged user found.");
+        setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
@@ -25,19 +29,17 @@ function MyEquipments() {
         setEquipments(data);
       } catch (err) {
         console.error(err);
-        setError("Failed to load equipments.");
+        setError(t("failedToLoadEquipments"));
       } finally {
         setLoading(false);
       }
     }
 
     loadEquipments();
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   async function handleDelete(equipmentId) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this equipment?"
-    );
+    const confirmed = window.confirm(t("areYouSureDeleteEquipment"));
     if (!confirmed) return;
 
     try {
@@ -47,40 +49,32 @@ function MyEquipments() {
       );
     } catch (error) {
       console.error(error);
-      setError("Failed to delete equipment.");
+      setError(t("failedToDeleteEquipment"));
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
-      <button
-        onClick={() => navigate("/my-farm")}
-        className="mb-4 text-green-800 font-medium"
-      >
-        ← Back
-      </button>
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
+      <PageHeader
+        title={t("myEquipments")}
+        subtitle={t("manageEquipments")}
+        backTo="/my-farm"
+      />
 
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-green-950">My Equipments</h1>
-        <p className="text-gray-600 mt-1">
-          Manage your farm tools and equipments
-        </p>
-      </div>
-
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6">
         <button
           onClick={() => navigate("/my-farm/equipments/add")}
-          className="bg-green-700 text-white px-5 py-3 rounded-full font-semibold"
+          className="w-full sm:w-auto bg-green-700 text-white px-5 py-3 rounded-full font-semibold"
         >
-          + Add Equipment
+          + {t("addEquipment")}
         </button>
       </div>
 
-      {loading && <p className="text-green-700">Loading equipments...</p>}
+      {loading && <p className="text-green-700">{t("loadingEquipments")}</p>}
       {error && <p className="text-red-600">{error}</p>}
 
       {!loading && !error && equipments.length === 0 && (
-        <p className="text-gray-600">No equipments found for your farm.</p>
+        <p className="text-gray-600">{t("noEquipmentsFound")}</p>
       )}
 
       {!loading && !error && equipments.length > 0 && (
@@ -101,7 +95,7 @@ function MyEquipments() {
 
               <div className="p-4">
                 <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-2">
-                  {equipment.category || "Equipment"}
+                  {equipment.category || t("equipment")}
                 </span>
 
                 <h2 className="text-xl font-bold text-gray-900">
@@ -109,15 +103,16 @@ function MyEquipments() {
                 </h2>
 
                 <p className="text-sm text-gray-600 mt-2">
-                  <strong>Condition:</strong> {equipment.condition || "Unknown"}
+                  <strong>{t("condition")}:</strong>{" "}
+                  {equipment.condition || t("unknown")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>Quantity:</strong> {equipment.quantity || 0}
+                  <strong>{t("quantity")}:</strong> {equipment.quantity || 0}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>Notes:</strong> {equipment.notes || "No notes"}
+                  <strong>{t("notes")}:</strong> {equipment.notes || t("noNotes")}
                 </p>
 
                 <div className="mt-4 flex gap-3">
@@ -129,14 +124,14 @@ function MyEquipments() {
                     }
                     className="flex-1 bg-green-700 text-white py-2 rounded-full text-sm font-semibold"
                   >
-                    Edit
+                    {t("edit")}
                   </button>
 
                   <button
                     onClick={() => handleDelete(equipment.ID)}
                     className="flex-1 bg-red-50 text-red-600 py-2 rounded-full text-sm font-semibold border border-red-100"
                   >
-                    Delete
+                    {t("delete")}
                   </button>
                 </div>
               </div>
@@ -144,6 +139,8 @@ function MyEquipments() {
           ))}
         </div>
       )}
+
+      <BottomNav />
     </div>
   );
 }

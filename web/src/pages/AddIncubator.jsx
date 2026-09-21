@@ -1,11 +1,14 @@
+import BottomNav from "../components/BottomNav";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { createIncubator } from "../services/api";
+import { useTranslation } from "react-i18next";
 
 function AddIncubator() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -45,7 +48,7 @@ function AddIncubator() {
     setMessage("");
 
     if (!currentUser) {
-      setMessage("You must be logged in to add an incubator.");
+      setMessage(t("mustBeLoggedInToAddIncubator"));
       setSubmitting(false);
       return;
     }
@@ -61,39 +64,40 @@ function AddIncubator() {
 
       await createIncubator(payload);
 
-      setMessage("Incubator added successfully!");
+      setMessage(t("incubatorAddedSuccessfully"));
 
       setTimeout(() => {
         navigate("/my-farm/incubators");
       }, 1000);
     } catch (error) {
       console.error("Add incubator error:", error);
-      setMessage(`Failed to add incubator: ${error.message}`);
+      setMessage(`${t("failedToAddIncubator")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() => navigate("/my-farm/incubators")}
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-green-950 mb-2">Add Incubator</h1>
+        <h1 className="text-3xl font-bold text-green-950 mb-2">
+          {t("addIncubator")}
+        </h1>
         <p className="text-gray-600 mb-6">
-          Add a new incubator to your farm.
+          {t("addIncubatorSubtitle")}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Photo preview only */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Incubator Photo
+              {t("incubatorPhoto")}
             </label>
 
             <div className="flex flex-col items-center gap-3">
@@ -101,18 +105,18 @@ function AddIncubator() {
                 {photoPreview ? (
                   <img
                     src={photoPreview}
-                    alt="Incubator Preview"
+                    alt={t("incubatorPreview")}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-green-700 text-sm">
-                    No incubator photo selected
+                    {t("noIncubatorPhotoSelected")}
                   </span>
                 )}
               </div>
 
               <label className="inline-block cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition">
-                Upload Incubator Photo
+                {t("uploadIncubatorPhoto")}
                 <input
                   type="file"
                   accept="image/*"
@@ -122,21 +126,21 @@ function AddIncubator() {
               </label>
 
               <p className="text-xs text-gray-500 text-center">
-                Photo preview only for now. Backend image upload will be added later.
+                {t("incubatorPhotoPreviewNote")}
               </p>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Incubator Name
+              {t("incubatorName")}
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter incubator name"
+              placeholder={t("enterIncubatorName")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -144,7 +148,7 @@ function AddIncubator() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Condition
+              {t("condition")}
             </label>
             <select
               name="condition"
@@ -152,21 +156,21 @@ function AddIncubator() {
               onChange={handleChange}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             >
-              <option value="New">New</option>
-              <option value="Used">Used</option>
+              <option value="New">{t("new")}</option>
+              <option value="Used">{t("used")}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Capacity
+              {t("capacity")}
             </label>
             <input
               type="number"
               name="capacity"
               value={formData.capacity}
               onChange={handleChange}
-              placeholder="Enter egg capacity"
+              placeholder={t("enterEggCapacity")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -174,14 +178,14 @@ function AddIncubator() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
+              {t("notes")}
             </label>
             <textarea
               rows="4"
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              placeholder="Add notes"
+              placeholder={t("addNotes")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             ></textarea>
           </div>
@@ -197,10 +201,12 @@ function AddIncubator() {
             disabled={submitting}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
           >
-            {submitting ? "Adding..." : "Add Incubator"}
+            {submitting ? t("adding") : t("addIncubator")}
           </button>
         </form>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

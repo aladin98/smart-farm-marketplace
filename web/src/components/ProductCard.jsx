@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fallbackImage from "../assets/images/fallback-product.jpg";
+import { getCurrencyByCountry } from "../utils/currency";
+import { useTranslation } from "react-i18next";
 
 function ProductCard({ product }) {
   const [imgSrc, setImgSrc] = useState(product.photoUrl || fallbackImage);
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const currency = getCurrencyByCountry(product.country?.name);
 
-  const categoryName = product.category?.name || "Uncategorized";
+  const categoryName = product.category?.name || t("uncategorized");
   const sellerName = product.seller
     ? `${product.seller.firstName} ${product.seller.lastName}`
-    : "Unknown seller";
+    : t("unknownSeller");
 
   return (
     <div
@@ -37,6 +41,8 @@ function ProductCard({ product }) {
           <button
             className="text-xl"
             onClick={(e) => e.stopPropagation()}
+            aria-label={t("favorite")}
+            title={t("favorite")}
           >
             🤍
           </button>
@@ -46,7 +52,7 @@ function ProductCard({ product }) {
         <p className="text-sm text-gray-600 mt-1">{product.description}</p>
 
         <p className="text-2xl font-bold text-green-700 mt-3">
-          {product.price} MAD
+          {product.price} {currency}
         </p>
 
         <p className="text-sm text-gray-500 mt-2">📍 {product.city}</p>
@@ -54,7 +60,9 @@ function ProductCard({ product }) {
 
         <div className="mt-3">
           <span className="inline-block bg-green-50 text-green-700 text-sm rounded-full px-3 py-1">
-            {product.deliveryAvailable ? "Delivery available" : "No delivery"}
+            {product.deliveryAvailable
+              ? t("deliveryAvailable")
+              : t("noDelivery")}
           </span>
         </div>
       </div>

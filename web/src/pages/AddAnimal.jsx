@@ -1,3 +1,4 @@
+import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,10 +9,12 @@ import {
   createFarmAnimal,
 } from "../services/api";
 import { getCurrentUser } from "../services/auth";
+import { useTranslation } from "react-i18next";
 
 function AddAnimal() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [animalTypes, setAnimalTypes] = useState([]);
   const [animalVariants, setAnimalVariants] = useState([]);
@@ -42,7 +45,7 @@ function AddAnimal() {
   useEffect(() => {
     async function loadData() {
       if (!currentUser) {
-        setMessage("No logged user found.");
+        setMessage(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
@@ -82,14 +85,14 @@ function AddAnimal() {
         }));
       } catch (error) {
         console.error(error);
-        setMessage("Failed to load animal form data.");
+        setMessage(t("failedToLoadAnimalFormData"));
       } finally {
         setLoading(false);
       }
     }
 
     loadData();
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -149,7 +152,7 @@ function AddAnimal() {
     setMessage("");
 
     if (!currentUser) {
-      setMessage("You must be logged in to add animals.");
+      setMessage(t("mustBeLoggedInToAddAnimals"));
       setSubmitting(false);
       return;
     }
@@ -172,41 +175,43 @@ function AddAnimal() {
 
       await createFarmAnimal(payload);
 
-      setMessage("Animal added successfully!");
+      setMessage(t("animalAddedSuccessfully"));
 
       setTimeout(() => {
         navigate("/my-farm/animals");
       }, 1000);
     } catch (error) {
       console.error("Add animal error:", error);
-      setMessage(`Failed to add animal: ${error.message}`);
+      setMessage(`${t("failedToAddAnimal")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() => navigate("/my-farm/animals")}
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-green-950 mb-2">Add Animal</h1>
+        <h1 className="text-3xl font-bold text-green-950 mb-2">
+          {t("addAnimal")}
+        </h1>
         <p className="text-gray-600 mb-6">
-          Add a new animal or animal group to your farm.
+          {t("addNewAnimalSubtitle")}
         </p>
 
         {loading ? (
-          <p className="text-green-700">Loading animal form...</p>
+          <p className="text-green-700">{t("loadingAnimalForm")}</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Animal Photo
+                {t("animalPhoto")}
               </label>
 
               <div className="flex flex-col items-center gap-3">
@@ -214,18 +219,18 @@ function AddAnimal() {
                   {photoPreview ? (
                     <img
                       src={photoPreview}
-                      alt="Animal Preview"
+                      alt={t("animalPreview")}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-green-700 text-sm">
-                      No animal photo selected
+                      {t("noAnimalPhotoSelected")}
                     </span>
                   )}
                 </div>
 
                 <label className="inline-block cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition">
-                  Upload Animal Photo
+                  {t("uploadAnimalPhoto")}
                   <input
                     type="file"
                     accept="image/*"
@@ -235,14 +240,14 @@ function AddAnimal() {
                 </label>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Photo preview only for now. Backend image upload will be added later.
+                  {t("animalPhotoPreviewNote")}
                 </p>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Animal Type
+                {t("animalType")}
               </label>
               <select
                 name="animalType_ID"
@@ -261,7 +266,7 @@ function AddAnimal() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Variant
+                {t("variant")}
               </label>
               <select
                 name="variant_ID"
@@ -269,7 +274,7 @@ function AddAnimal() {
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               >
-                <option value="">No variant</option>
+                <option value="">{t("noVariant")}</option>
                 {filteredVariants.map((variant) => (
                   <option key={variant.ID} value={variant.ID}>
                     {variant.name}
@@ -280,7 +285,7 @@ function AddAnimal() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Place
+                {t("place")}
               </label>
               <select
                 name="place_ID"
@@ -288,7 +293,7 @@ function AddAnimal() {
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               >
-                <option value="">No place</option>
+                <option value="">{t("noPlace")}</option>
                 {places.map((place) => (
                   <option key={place.ID} value={place.ID}>
                     {place.name} ({place.placeNumber})
@@ -299,7 +304,7 @@ function AddAnimal() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cage
+                {t("cage")}
               </label>
               <select
                 name="cage_ID"
@@ -307,7 +312,7 @@ function AddAnimal() {
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               >
-                <option value="">No cage</option>
+                <option value="">{t("noCage")}</option>
                 {filteredCages.map((cage) => (
                   <option key={cage.ID} value={cage.ID}>
                     {cage.cageNumber}
@@ -318,49 +323,49 @@ function AddAnimal() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Name
+                {t("customName")}
               </label>
               <input
                 type="text"
                 name="customName"
                 value={formData.customName}
                 onChange={handleChange}
-                placeholder="Optional custom animal name"
+                placeholder={t("optionalCustomAnimalName")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Group Number
+                {t("groupNumber")}
               </label>
               <input
                 type="text"
                 name="groupNumber"
                 value={formData.groupNumber}
                 onChange={handleChange}
-                placeholder="e.g. Q001"
+                placeholder={t("groupNumberExample")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Age
+                {t("age")}
               </label>
               <input
                 type="text"
                 name="age"
                 value={formData.age}
                 onChange={handleChange}
-                placeholder="e.g. 6 weeks"
+                placeholder={t("animalAgeExample")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Source Type
+                {t("sourceType")}
               </label>
               <select
                 name="sourceType"
@@ -368,23 +373,23 @@ function AddAnimal() {
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               >
-                <option value="Hatched">Hatched</option>
-                <option value="Bought">Bought</option>
-                <option value="Transferred">Transferred</option>
-                <option value="Other">Other</option>
+                <option value="Hatched">{t("hatched")}</option>
+                <option value="Bought">{t("bought")}</option>
+                <option value="Transferred">{t("transferred")}</option>
+                <option value="Other">{t("other")}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity
+                {t("quantity")}
               </label>
               <input
                 type="number"
                 name="quantity"
                 value={formData.quantity}
                 onChange={handleChange}
-                placeholder="Enter quantity"
+                placeholder={t("enterQuantity")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
                 required
               />
@@ -392,14 +397,14 @@ function AddAnimal() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
+                {t("notes")}
               </label>
               <textarea
                 rows="4"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                placeholder="Add notes about this animal group"
+                placeholder={t("animalNotesPlaceholder")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               ></textarea>
             </div>
@@ -415,11 +420,13 @@ function AddAnimal() {
               disabled={submitting}
               className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
             >
-              {submitting ? "Adding..." : "Add Animal"}
+              {submitting ? t("adding") : t("addAnimal")}
             </button>
           </form>
         )}
       </div>
+
+      <BottomNav />
     </div>
   );
 }

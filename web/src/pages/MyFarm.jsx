@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
+import BottomNav from "../components/BottomNav";
+import { useTranslation } from "react-i18next";
 import {
   fetchFarmAnimalsByOwner,
   fetchIncubatorsByOwner,
@@ -13,6 +15,7 @@ import {
 function MyFarm() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [stats, setStats] = useState({
     animals: 0,
@@ -29,7 +32,7 @@ function MyFarm() {
   useEffect(() => {
     async function loadFarmData() {
       if (!currentUser) {
-        setError("No logged user found.");
+        setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
@@ -64,54 +67,54 @@ function MyFarm() {
           equipments: equipments.length,
         });
       } catch (err) {
-  console.error("MyFarm dashboard error:", err);
-  setError(`Failed to load farm dashboard: ${err.message}`);
-} finally {
+        console.error("MyFarm dashboard error:", err);
+        setError(`${t("failedToLoadFarmDashboard")}: ${err.message}`);
+      } finally {
         setLoading(false);
       }
     }
 
     loadFarmData();
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   const cards = [
-  { title: "Animals", value: stats.animals, icon: "🐥", path: "/my-farm/animals" },
-  { title: "Incubators", value: stats.incubators, icon: "🥚", path: "/my-farm/incubators" },
-  { title: "Cycles", value: stats.cycles, icon: "🔄" },
-  { title: "Places", value: stats.places, icon: "📍", path: "/my-farm/places" },
-  { title: "Cages", value: stats.cages, icon: "🪺", path: "/my-farm/cages" },
-  { title: "Equipments", value: stats.equipments, icon: "🧰", path: "/my-farm/equipments" },
-];
+    { title: t("animals"), value: stats.animals, icon: "🐥", path: "/my-farm/animals" },
+    { title: t("incubators"), value: stats.incubators, icon: "🥚", path: "/my-farm/incubators" },
+    { title: t("cycles"), value: stats.cycles, icon: "🔄", path: "/my-farm/incubators" },
+    { title: t("places"), value: stats.places, icon: "📍", path: "/my-farm/places" },
+    { title: t("cages"), value: stats.cages, icon: "🪺", path: "/my-farm/cages" },
+    { title: t("equipments"), value: stats.equipments, icon: "🧰", path: "/my-farm/equipments" },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() => navigate("/")}
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-green-950">My Farm</h1>
+        <h1 className="text-3xl font-bold text-green-950">{t("myFarm")}</h1>
         <p className="text-gray-600 mt-1">
-          Manage your farm activities and resources
+          {t("manageFarmActivities")}
         </p>
       </div>
 
-      {loading && <p className="text-green-700">Loading farm dashboard...</p>}
+      {loading && <p className="text-green-700">{t("loadingFarmDashboard")}</p>}
       {error && <p className="text-red-600">{error}</p>}
 
       {!loading && !error && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {cards.map((card) => (
             <div
-  key={card.title}
-  onClick={() => card.path && navigate(card.path)}
-  className={`bg-white rounded-[24px] shadow-sm p-5 border border-green-50 ${
-    card.path ? "cursor-pointer hover:shadow-md transition" : ""
-  }`}
->
+              key={card.title}
+              onClick={() => card.path && navigate(card.path)}
+              className={`bg-white rounded-[24px] shadow-sm p-5 border border-green-50 ${
+                card.path ? "cursor-pointer hover:shadow-md transition" : ""
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-500 text-sm">{card.title}</p>
@@ -125,6 +128,8 @@ function MyFarm() {
           ))}
         </div>
       )}
+
+      <BottomNav />
     </div>
   );
 }

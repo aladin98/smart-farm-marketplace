@@ -468,3 +468,91 @@ export async function deleteEquipment(id) {
 
   return true;
 }
+
+export async function updateUser(id, userData) {
+  const response = await fetch(`/odata/v4/marketplace/Users('${id}')`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(userData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update user: ${response.status} - ${errorText}`);
+  }
+
+  return true;
+}
+
+export async function fetchLearningCategories() {
+  const response = await fetch("/odata/v4/marketplace/LearningCategories");
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch learning categories: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.value;
+}
+
+export async function fetchLearningArticles() {
+  const response = await fetch(
+    "/odata/v4/marketplace/LearningArticles?$expand=category"
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch learning articles: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.value;
+}
+
+export async function createLearningArticle(payload) {
+  const response = await fetch("/odata/v4/marketplace/LearningArticles", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to create learning article");
+  }
+
+  return response.json();
+}
+
+export async function deleteLearningArticle(articleId) {
+  const response = await fetch(`/odata/v4/marketplace/LearningArticles/${articleId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to delete learning article");
+  }
+
+  return true;
+}
+
+export async function updateLearningArticle(articleId, payload) {
+  const response = await fetch(`/odata/v4/marketplace/LearningArticles/${articleId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to update learning article");
+  }
+
+  return response.json();
+}

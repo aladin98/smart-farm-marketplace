@@ -1,11 +1,14 @@
+import BottomNav from "../components/BottomNav";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createIncubationCycle } from "../services/api";
+import { useTranslation } from "react-i18next";
 
 function AddIncubationCycle() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const incubator = state?.incubator;
+  const { t } = useTranslation();
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -22,18 +25,20 @@ function AddIncubationCycle() {
 
   if (!incubator) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4 pb-24">
         <div className="bg-white rounded-[28px] shadow-sm p-6 text-center max-w-md w-full">
           <h2 className="text-2xl font-bold text-green-900 mb-3">
-            Incubator not found
+            {t("incubatorNotFound")}
           </h2>
           <button
             onClick={() => navigate("/my-farm/incubators")}
             className="bg-green-700 text-white px-6 py-3 rounded-full font-semibold"
           >
-            Back to Incubators
+            {t("backToIncubators")}
           </button>
         </div>
+
+        <BottomNav />
       </div>
     );
   }
@@ -65,7 +70,7 @@ function AddIncubationCycle() {
 
       await createIncubationCycle(payload);
 
-      setMessage("Incubation cycle added successfully!");
+      setMessage(t("incubationCycleAddedSuccessfully"));
 
       setTimeout(() => {
         navigate(`/my-farm/incubators/${incubator.ID}/cycles`, {
@@ -74,14 +79,14 @@ function AddIncubationCycle() {
       }, 1000);
     } catch (error) {
       console.error("Add cycle error:", error);
-      setMessage(`Failed to add cycle: ${error.message}`);
+      setMessage(`${t("failedToAddCycle")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() =>
           navigate(`/my-farm/incubators/${incubator.ID}/cycles`, {
@@ -90,28 +95,28 @@ function AddIncubationCycle() {
         }
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
-          Add Incubation Cycle
+          {t("addIncubationCycle")}
         </h1>
         <p className="text-gray-600 mb-6">
-          Create a new cycle for <strong>{incubator.name}</strong>
+          {t("createNewCycleFor")} <strong>{incubator.name}</strong>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Eggs Count
+              {t("eggsCount")}
             </label>
             <input
               type="number"
               name="eggsCount"
               value={formData.eggsCount}
               onChange={handleChange}
-              placeholder="Enter eggs count"
+              placeholder={t("enterEggsCount")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -120,7 +125,7 @@ function AddIncubationCycle() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
+                {t("startDate")}
               </label>
               <input
                 type="date"
@@ -134,7 +139,7 @@ function AddIncubationCycle() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Check Date
+                {t("checkDate")}
               </label>
               <input
                 type="date"
@@ -148,7 +153,7 @@ function AddIncubationCycle() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stop Date
+                {t("stopDate")}
               </label>
               <input
                 type="date"
@@ -162,7 +167,7 @@ function AddIncubationCycle() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hatch Date
+                {t("hatchDate")}
               </label>
               <input
                 type="date"
@@ -177,7 +182,7 @@ function AddIncubationCycle() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              {t("status")}
             </label>
             <select
               name="status"
@@ -185,23 +190,23 @@ function AddIncubationCycle() {
               onChange={handleChange}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             >
-              <option value="Planned">Planned</option>
-              <option value="Running">Running</option>
-              <option value="Completed">Completed</option>
-              <option value="Failed">Failed</option>
+              <option value="Planned">{t("planned")}</option>
+              <option value="Running">{t("running")}</option>
+              <option value="Completed">{t("completed")}</option>
+              <option value="Failed">{t("failed")}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
+              {t("notes")}
             </label>
             <textarea
               rows="4"
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              placeholder="Add notes about this cycle"
+              placeholder={t("cycleNotesPlaceholder")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             ></textarea>
           </div>
@@ -217,10 +222,12 @@ function AddIncubationCycle() {
             disabled={submitting}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
           >
-            {submitting ? "Adding..." : "Add Cycle"}
+            {submitting ? t("adding") : t("addCycle")}
           </button>
         </form>
       </div>
+
+      <BottomNav />
     </div>
   );
 }

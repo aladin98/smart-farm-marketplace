@@ -3,10 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { fetchIncubatorsByOwner } from "../services/api";
 import fallbackImage from "../assets/images/fallback-product.jpg";
+import PageHeader from "../components/PageHeader";
+import BottomNav from "../components/BottomNav";
+import { useTranslation } from "react-i18next";
 
 function MyIncubators() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [incubators, setIncubators] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +19,7 @@ function MyIncubators() {
   useEffect(() => {
     async function loadIncubators() {
       if (!currentUser) {
-        setError("No logged user found.");
+        setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
@@ -25,45 +29,37 @@ function MyIncubators() {
         setIncubators(data);
       } catch (err) {
         console.error(err);
-        setError("Failed to load incubators.");
+        setError(t("failedToLoadIncubators"));
       } finally {
         setLoading(false);
       }
     }
 
     loadIncubators();
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
-      <button
-        onClick={() => navigate("/my-farm")}
-        className="mb-4 text-green-800 font-medium"
-      >
-        ← Back
-      </button>
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
+      <PageHeader
+        title={t("myIncubators")}
+        subtitle={t("manageIncubators")}
+        backTo="/my-farm"
+      />
 
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-green-950">My Incubators</h1>
-        <p className="text-gray-600 mt-1">
-          Manage your incubators and hatching equipment
-        </p>
-      </div>
-
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6">
         <button
           onClick={() => navigate("/my-farm/incubators/add")}
-          className="bg-green-700 text-white px-5 py-3 rounded-full font-semibold"
+          className="w-full sm:w-auto bg-green-700 text-white px-5 py-3 rounded-full font-semibold"
         >
-          + Add Incubator
+          + {t("addIncubator")}
         </button>
       </div>
 
-      {loading && <p className="text-green-700">Loading incubators...</p>}
+      {loading && <p className="text-green-700">{t("loadingIncubators")}</p>}
       {error && <p className="text-red-600">{error}</p>}
 
       {!loading && !error && incubators.length === 0 && (
-        <p className="text-gray-600">No incubators found for your farm.</p>
+        <p className="text-gray-600">{t("noIncubatorsFound")}</p>
       )}
 
       {!loading && !error && incubators.length > 0 && (
@@ -84,7 +80,7 @@ function MyIncubators() {
 
               <div className="p-4">
                 <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-2">
-                  {incubator.condition || "Unknown"}
+                  {incubator.condition || t("unknown")}
                 </span>
 
                 <h2 className="text-xl font-bold text-gray-900">
@@ -92,23 +88,23 @@ function MyIncubators() {
                 </h2>
 
                 <p className="text-sm text-gray-600 mt-2">
-                  <strong>Capacity:</strong> {incubator.capacity || 0} eggs
+                  <strong>{t("capacity")}:</strong> {incubator.capacity || 0} {t("eggs")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>Notes:</strong> {incubator.notes || "No notes"}
+                  <strong>{t("notes")}:</strong> {incubator.notes || t("noNotes")}
                 </p>
 
                 <div className="mt-4">
                   <button
                     onClick={() =>
-                    navigate(`/my-farm/incubators/${incubator.ID}/cycles`, {
-                    state: { incubator },
+                      navigate(`/my-farm/incubators/${incubator.ID}/cycles`, {
+                        state: { incubator },
                       })
-                      }
-                      className="w-full bg-green-700 text-white py-2 rounded-full text-sm font-semibold"
-                      >
-                    View Cycles
+                    }
+                    className="w-full bg-green-700 text-white py-2 rounded-full text-sm font-semibold"
+                  >
+                    {t("viewCycles")}
                   </button>
                 </div>
               </div>
@@ -116,6 +112,8 @@ function MyIncubators() {
           ))}
         </div>
       )}
+
+      <BottomNav />
     </div>
   );
 }

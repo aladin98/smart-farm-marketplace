@@ -1,4 +1,4 @@
-ID;firstName;lastName;email;passwordHash;phoneNumber;idCardNumber;city;country_ID;profilePhoto
-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;Amine;Benali;amine@example.com;hashed_pw_1;0612345678;ID12345;Tunisia;tuni-tuni-tuni-tuni-tunisia01;https://example.com/photos/amine.jpg
-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb;Sara;Khaldi;sara@example.com;hashed_pw_2;0712345678;ID67890;Tunisia;tuni-tuni-tuni-tuni-tunisia01;https://example.com/photos/sara.jpg
-cccccccc-cccc-cccc-cccc-cccccccccccc;Ali;Mansouri;ali@example.com;hashed_pw_3;0555555555;ID54321;Tunisia;tuni-tuni-tuni-tuni-tunisia01;https://example.com/photos/ali.jpg
+ID;firstName;lastName;email;passwordHash;phoneNumber;idCardNumber;city;country_ID;profilePhoto;role
+aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa;Ala Dine;weslati;aladine@pwc.com;azerty;50413613;ID12345;Tunisia;tuni-tuni-tuni-tuni-tunisia01;https://example.com/photos/amine.jpg;admin
+bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb;Sara;Khaldi;sara@example.com;hashed_pw_2;0712345678;ID67890;Tunisia;tuni-tuni-tuni-tuni-tunisia01;https://example.com/photos/sara.jpg;user
+cccccccc-cccc-cccc-cccc-cccccccccccc;Ali;Mansouri;ali@example.com;hashed_pw_3;0555555555;ID54321;Tunisia;tuni-tuni-tuni-tuni-tunisia01;https://example.com/photos/ali.jpg;user

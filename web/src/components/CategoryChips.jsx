@@ -1,4 +1,8 @@
+import { useTranslation } from "react-i18next";
+
 function CategoryChips({ categories, selectedCategory, onSelectCategory }) {
+  const { t } = useTranslation();
+
   return (
     <div className="px-4 mt-4">
       <div className="flex gap-3 overflow-x-auto pb-2">
@@ -15,7 +19,7 @@ function CategoryChips({ categories, selectedCategory, onSelectCategory }) {
                   : "bg-white text-gray-700 border-gray-200"
               }`}
             >
-              {category}
+              {t(`categoriesMap.${category}`)}
             </button>
           );
         })}

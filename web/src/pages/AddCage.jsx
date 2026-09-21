@@ -1,11 +1,14 @@
+import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { createCage, fetchPlacesByOwner } from "../services/api";
+import { useTranslation } from "react-i18next";
 
 function AddCage() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const { t } = useTranslation();
 
   const [places, setPlaces] = useState([]);
   const [loadingPlaces, setLoadingPlaces] = useState(true);
@@ -35,14 +38,14 @@ function AddCage() {
         }
       } catch (error) {
         console.error(error);
-        setMessage("Failed to load places.");
+        setMessage(t("failedToLoadPlaces"));
       } finally {
         setLoadingPlaces(false);
       }
     }
 
     loadPlaces();
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -58,7 +61,7 @@ function AddCage() {
     setMessage("");
 
     if (!currentUser) {
-      setMessage("You must be logged in to add a cage.");
+      setMessage(t("mustBeLoggedInToAddCage"));
       setSubmitting(false);
       return;
     }
@@ -74,38 +77,40 @@ function AddCage() {
 
       await createCage(payload);
 
-      setMessage("Cage added successfully!");
+      setMessage(t("cageAddedSuccessfully"));
 
       setTimeout(() => {
         navigate("/my-farm/cages");
       }, 1000);
     } catch (error) {
       console.error("Add cage error:", error);
-      setMessage(`Failed to add cage: ${error.message}`);
+      setMessage(`${t("failedToAddCage")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-10">
+    <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
         onClick={() => navigate("/my-farm/cages")}
         className="mb-4 text-green-800 font-medium"
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-green-950 mb-2">Add Cage</h1>
+        <h1 className="text-3xl font-bold text-green-950 mb-2">
+          {t("addCage")}
+        </h1>
         <p className="text-gray-600 mb-6">
-          Add a new cage and link it to a place.
+          {t("addCageSubtitle")}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Place
+              {t("place")}
             </label>
             <select
               name="place_ID"
@@ -125,14 +130,14 @@ function AddCage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cage Number
+              {t("cageNumber")}
             </label>
             <input
               type="text"
               name="cageNumber"
               value={formData.cageNumber}
               onChange={handleChange}
-              placeholder="e.g. C01"
+              placeholder={t("cageNumberExample")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -140,14 +145,14 @@ function AddCage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Capacity
+              {t("capacity")}
             </label>
             <input
               type="number"
               name="capacity"
               value={formData.capacity}
               onChange={handleChange}
-              placeholder="Enter cage capacity"
+              placeholder={t("enterCageCapacity")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -155,14 +160,14 @@ function AddCage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
+              {t("notes")}
             </label>
             <textarea
               rows="4"
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              placeholder="Add notes about this cage"
+              placeholder={t("cageNotesPlaceholder")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             ></textarea>
           </div>
@@ -178,10 +183,12 @@ function AddCage() {
             disabled={submitting}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
           >
-            {submitting ? "Adding..." : "Add Cage"}
+            {submitting ? t("adding") : t("addCage")}
           </button>
         </form>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
