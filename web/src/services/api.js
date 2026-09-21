@@ -1,3 +1,5 @@
+import { getCurrentUser } from "./auth";
+
 export async function fetchProducts() {
   const response = await fetch(
     "/odata/v4/marketplace/Products?$expand=category,seller,country"
@@ -510,22 +512,6 @@ export async function fetchLearningArticles() {
   return data.value;
 }
 
-export async function createLearningArticle(payload) {
-  const response = await fetch("/odata/v4/marketplace/LearningArticles", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Failed to create learning article");
-  }
-
-  return response.json();
-}
 
 export async function deleteLearningArticle(articleId) {
   const response = await fetch(`/odata/v4/marketplace/LearningArticles/${articleId}`, {
@@ -552,6 +538,28 @@ export async function updateLearningArticle(articleId, payload) {
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(errorText || "Failed to update learning article");
+  }
+
+  return response.json();
+}
+
+const API_BASE = "/odata/v4/marketplace";
+
+export async function createLearningArticle(payload) {
+  const currentUser = getCurrentUser();
+
+  const response = await fetch(`${API_BASE}/LearningArticles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": currentUser?.ID || ""
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to create learning article");
   }
 
   return response.json();
