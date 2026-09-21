@@ -356,6 +356,18 @@
 "onlyAdminsCanEditArticles": "يمكن للمسؤولين فقط تعديل المقالات.",
 "articleUpdatedSuccessfully": "تم تحديث المقال بنجاح!",
 "failedToUpdateArticle": "فشل في تحديث المقال",
+"manageUsers": "إدارة المستخدمين",
+"manageAppUsers": "إدارة جميع مستخدمي التطبيق",
+"onlyOwnerCanManageUsers": "يمكن للمالك فقط إدارة المستخدمين.",
+"loadingUsers": "جاري تحميل المستخدمين...",
+"noUsersFound": "لم يتم العثور على مستخدمين.",
+"failedToLoadUsers": "فشل في تحميل المستخدمين.",
+"failedToUpdateUserRole": "فشل في تحديث دور المستخدم",
+"failedToDeleteUser": "فشل في حذف المستخدم",
+"areYouSureDeleteUser": "هل أنت متأكد أنك تريد حذف هذا المستخدم؟",
+"userRole": "مستخدم",
+"ownerRole": "مالك",
+"emailAlreadyExists": "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
 
   "categoriesMap": {
     "All": "الكل",

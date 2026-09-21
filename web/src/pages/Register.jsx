@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchCountries, createUser } from "../services/api";
+import { fetchCountries } from "../services/api";
+import { registerUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 
@@ -82,19 +83,7 @@ function Register() {
     setSubmitting(true);
 
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        passwordHash: formData.password,
-        phoneNumber: formData.phoneNumber,
-        idCardNumber: formData.idCardNumber,
-        city: formData.city,
-        country_ID: formData.country_ID,
-        profilePhoto: formData.profilePhoto,
-      };
-
-      await createUser(payload);
+      await registerUser(formData);
 
       setMessage(t("accountCreatedSuccessfully"));
 
@@ -103,7 +92,12 @@ function Register() {
       }, 1000);
     } catch (error) {
       console.error(error);
-      setMessage(t("failedToCreateAccount"));
+
+      if (error.message === "EMAIL_ALREADY_EXISTS") {
+        setMessage(t("emailAlreadyExists"));
+      } else {
+        setMessage(t("failedToCreateAccount"));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -121,9 +115,7 @@ function Register() {
             <h1 className="text-4xl font-bold text-green-900">
               {t("createAccount")}
             </h1>
-            <p className="text-gray-500 mt-2">
-              {t("joinSmartFarmToday")}
-            </p>
+            <p className="text-gray-500 mt-2">{t("joinSmartFarmToday")}</p>
           </div>
 
           <div className="flex flex-col items-center mb-6">

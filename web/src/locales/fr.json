@@ -356,6 +356,18 @@
 "onlyAdminsCanEditArticles": "Seuls les administrateurs peuvent modifier les articles.",
 "articleUpdatedSuccessfully": "Article mis à jour avec succès !",
 "failedToUpdateArticle": "Échec de la mise à jour de l'article",
+"manageUsers": "Gérer les utilisateurs",
+"manageAppUsers": "Gérez tous les utilisateurs de l'application",
+"onlyOwnerCanManageUsers": "Seul le propriétaire peut gérer les utilisateurs.",
+"loadingUsers": "Chargement des utilisateurs...",
+"noUsersFound": "Aucun utilisateur trouvé.",
+"failedToLoadUsers": "Échec du chargement des utilisateurs.",
+"failedToUpdateUserRole": "Échec de la mise à jour du rôle utilisateur",
+"failedToDeleteUser": "Échec de la suppression de l'utilisateur",
+"areYouSureDeleteUser": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+"userRole": "Utilisateur",
+"ownerRole": "Propriétaire",
+"emailAlreadyExists": "Un compte avec cet e-mail existe déjà.",
 
   "categoriesMap": {
     "All": "Tous",

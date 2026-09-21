@@ -12,6 +12,7 @@ import { categories } from "./data/products";
 import { fetchProductsByCountry } from "./services/api";
 import { getCurrentUser } from "./services/auth";
 import EditLearningArticle from "./pages/EditLearningArticle";
+import UserManagement from "./pages/UserManagement";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -44,6 +45,7 @@ import EditEquipment from "./pages/EditEquipment";
 import EditProfile from "./pages/EditProfile";
 import Learning from "./pages/Learning";
 import LearningArticleDetails from "./pages/LearningArticleDetails";
+import OwnerRoute from "./components/OwnerRoute";
 
 function MarketplaceHome() {
   const navigate = useNavigate();
@@ -425,6 +427,14 @@ function App() {
     <ProtectedRoute>
       <EditLearningArticle />
     </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/users"
+  element={
+    <OwnerRoute>
+      <UserManagement />
+    </OwnerRoute>
   }
 />
 

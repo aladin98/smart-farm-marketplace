@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, logoutUser } from "../services/auth";
+import { getCurrentUser, logoutUser, isOwner } from "../services/auth";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
@@ -109,6 +109,15 @@ function Profile() {
           >
             {t("editProfile")}
           </button>
+
+          {currentUser?.role === "owner" && (
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="w-full bg-green-50 text-green-700 py-3 rounded-full font-semibold border border-green-100"
+            >
+              {t("manageUsers")}
+            </button>
+          )}
 
           <button
             onClick={handleLogout}

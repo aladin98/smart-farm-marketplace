@@ -19,6 +19,7 @@ entity Users {
   profilePhoto      : String;
   role              : String;
   country           : Association to Countries;
+  isActive      : Boolean default true;
 }
 
 entity Categories : cuid, managed {

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchUsers } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { loginUser } from "../services/auth";
+import { authenticateUser } from "../services/auth";
 
 function Login() {
   const navigate = useNavigate();
@@ -25,39 +27,33 @@ function Login() {
   }
 
   async function handleLogin(e) {
-    e.preventDefault();
-    setSubmitting(true);
-    setMessage("");
+  e.preventDefault();
+  setSubmitting(true);
+  setMessage("");
 
-    try {
-      const users = await fetchUsers();
+  try {
+    const matchedUser = await authenticateUser(
+      formData.email,
+      formData.password
+    );
 
-      const matchedUser = users.find(
-        (user) =>
-          user.email === formData.email &&
-          user.passwordHash === formData.password
-      );
-
-      if (!matchedUser) {
-        setMessage(t("invalidEmailOrPassword"));
-        setSubmitting(false);
-        return;
-      }
-
-      localStorage.setItem("currentUser", JSON.stringify(matchedUser));
-
-      setMessage(t("loginSuccess"));
-
-      setTimeout(() => {
-        navigate("/");
-      }, 800);
-    } catch (error) {
-      console.error(error);
-      setMessage(t("loginFailed"));
-    } finally {
-      setSubmitting(false);
+    if (!matchedUser) {
+      setMessage(t("invalidEmailOrPassword"));
+      return;
     }
+
+    setMessage(t("loginSuccess"));
+
+    setTimeout(() => {
+      navigate("/");
+    }, 800);
+  } catch (error) {
+    console.error(error);
+    setMessage(t("loginFailed"));
+  } finally {
+    setSubmitting(false);
   }
+}
 
   return (
     <div className="min-h-screen bg-[#f7f8f2] flex items-center justify-center px-4">

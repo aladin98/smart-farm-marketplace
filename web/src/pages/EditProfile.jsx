@@ -1,7 +1,7 @@
 import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchCountries, updateUser } from "../services/api";
+import { fetchCountries, updateProfile } from "../services/api";
 import { getCurrentUser, setCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
 
@@ -103,7 +103,7 @@ function EditProfile() {
         profilePhoto: formData.profilePhoto,
       };
 
-      await updateUser(currentUser.ID, payload);
+      await updateProfile(currentUser.ID, payload);
 
       const updatedUser = {
         ...currentUser,

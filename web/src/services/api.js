@@ -1,8 +1,20 @@
 import { getCurrentUser } from "./auth";
 
+const API_BASE = "/odata/v4/marketplace";
+
+function getAuthHeaders(extraHeaders = {}) {
+  const currentUser = getCurrentUser();
+
+  return {
+    "Content-Type": "application/json",
+    "x-user-email": currentUser?.email || "",
+    ...extraHeaders,
+  };
+}
+
 export async function fetchProducts() {
   const response = await fetch(
-    "/odata/v4/marketplace/Products?$expand=category,seller,country"
+    `${API_BASE}/Products?$expand=category,seller,country`
   );
 
   if (!response.ok) {
@@ -14,7 +26,7 @@ export async function fetchProducts() {
 }
 
 export async function fetchCategories() {
-  const response = await fetch("/odata/v4/marketplace/Categories");
+  const response = await fetch(`${API_BASE}/Categories`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch categories: ${response.status}`);
@@ -25,7 +37,7 @@ export async function fetchCategories() {
 }
 
 export async function createProduct(productData) {
-  const response = await fetch("/odata/v4/marketplace/Products", {
+  const response = await fetch(`${API_BASE}/Products`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -42,7 +54,7 @@ export async function createProduct(productData) {
 }
 
 export async function fetchCountries() {
-  const response = await fetch("/odata/v4/marketplace/Countries");
+  const response = await fetch(`${API_BASE}/Countries`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch countries: ${response.status}`);
@@ -52,37 +64,9 @@ export async function fetchCountries() {
   return data.value;
 }
 
-export async function createUser(userData) {
-  const response = await fetch("/odata/v4/marketplace/Users", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(userData),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create user: ${response.status} - ${errorText}`);
-  }
-
-  return await response.json();
-}
-
-export async function fetchUsers() {
-  const response = await fetch("/odata/v4/marketplace/Users?$expand=country");
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch users: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.value;
-}
-
 export async function fetchProductsByCountry(countryId) {
   const response = await fetch(
-    "/odata/v4/marketplace/Products?$expand=category,seller,country"
+    `${API_BASE}/Products?$expand=category,seller,country`
   );
 
   if (!response.ok) {
@@ -90,13 +74,12 @@ export async function fetchProductsByCountry(countryId) {
   }
 
   const data = await response.json();
-
   return data.value.filter((product) => product.country_ID === countryId);
 }
 
 export async function fetchFarmAnimalsByOwner(ownerId) {
   const response = await fetch(
-    `/odata/v4/marketplace/FarmAnimals?$expand=animalType,variant,place,cage&$filter=owner_ID eq '${ownerId}'`
+    `${API_BASE}/FarmAnimals?$expand=animalType,variant,place,cage&$filter=owner_ID eq '${ownerId}'`
   );
 
   if (!response.ok) {
@@ -109,7 +92,7 @@ export async function fetchFarmAnimalsByOwner(ownerId) {
 
 export async function fetchIncubatorsByOwner(ownerId) {
   const response = await fetch(
-    `/odata/v4/marketplace/Incubators?$filter=owner_ID eq '${ownerId}'`
+    `${API_BASE}/Incubators?$filter=owner_ID eq '${ownerId}'`
   );
 
   if (!response.ok) {
@@ -122,7 +105,7 @@ export async function fetchIncubatorsByOwner(ownerId) {
 
 export async function fetchIncubationCycles() {
   const response = await fetch(
-    `/odata/v4/marketplace/IncubationCycles?$expand=incubator`
+    `${API_BASE}/IncubationCycles?$expand=incubator`
   );
 
   if (!response.ok) {
@@ -135,7 +118,7 @@ export async function fetchIncubationCycles() {
 
 export async function fetchIncubationCyclesByIncubator(incubatorId) {
   const response = await fetch(
-    `/odata/v4/marketplace/IncubationCycles?$filter=incubator_ID eq '${incubatorId}'`
+    `${API_BASE}/IncubationCycles?$filter=incubator_ID eq '${incubatorId}'`
   );
 
   if (!response.ok) {
@@ -146,9 +129,26 @@ export async function fetchIncubationCyclesByIncubator(incubatorId) {
   return data.value;
 }
 
+export async function createIncubator(incubatorData) {
+  const response = await fetch(`${API_BASE}/Incubators`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(incubatorData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create incubator: ${response.status} - ${errorText}`);
+  }
+
+  return await response.json();
+}
+
 export async function fetchPlacesByOwner(ownerId) {
   const response = await fetch(
-    `/odata/v4/marketplace/Places?$filter=owner_ID eq '${ownerId}'`
+    `${API_BASE}/Places?$filter=owner_ID eq '${ownerId}'`
   );
 
   if (!response.ok) {
@@ -161,7 +161,7 @@ export async function fetchPlacesByOwner(ownerId) {
 
 export async function fetchCagesByOwner(ownerId) {
   const response = await fetch(
-    `/odata/v4/marketplace/Cages?$expand=place&$filter=owner_ID eq '${ownerId}'`
+    `${API_BASE}/Cages?$expand=place&$filter=owner_ID eq '${ownerId}'`
   );
 
   if (!response.ok) {
@@ -174,7 +174,7 @@ export async function fetchCagesByOwner(ownerId) {
 
 export async function fetchEquipmentsByOwner(ownerId) {
   const response = await fetch(
-    `/odata/v4/marketplace/Equipments?$filter=owner_ID eq '${ownerId}'`
+    `${API_BASE}/Equipments?$filter=owner_ID eq '${ownerId}'`
   );
 
   if (!response.ok) {
@@ -186,7 +186,7 @@ export async function fetchEquipmentsByOwner(ownerId) {
 }
 
 export async function fetchAnimalTypes() {
-  const response = await fetch("/odata/v4/marketplace/AnimalTypes");
+  const response = await fetch(`${API_BASE}/AnimalTypes`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch animal types: ${response.status}`);
@@ -198,7 +198,7 @@ export async function fetchAnimalTypes() {
 
 export async function fetchAnimalVariants() {
   const response = await fetch(
-    "/odata/v4/marketplace/AnimalVariants?$expand=animalType"
+    `${API_BASE}/AnimalVariants?$expand=animalType`
   );
 
   if (!response.ok) {
@@ -210,7 +210,7 @@ export async function fetchAnimalVariants() {
 }
 
 export async function createFarmAnimal(animalData) {
-  const response = await fetch("/odata/v4/marketplace/FarmAnimals", {
+  const response = await fetch(`${API_BASE}/FarmAnimals`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -227,7 +227,7 @@ export async function createFarmAnimal(animalData) {
 }
 
 export async function updateFarmAnimal(id, animalData) {
-  const response = await fetch(`/odata/v4/marketplace/FarmAnimals('${id}')`, {
+  const response = await fetch(`${API_BASE}/FarmAnimals('${id}')`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -244,7 +244,7 @@ export async function updateFarmAnimal(id, animalData) {
 }
 
 export async function deleteFarmAnimal(id) {
-  const response = await fetch(`/odata/v4/marketplace/FarmAnimals('${id}')`, {
+  const response = await fetch(`${API_BASE}/FarmAnimals('${id}')`, {
     method: "DELETE",
   });
 
@@ -256,25 +256,8 @@ export async function deleteFarmAnimal(id) {
   return true;
 }
 
-export async function createIncubator(incubatorData) {
-  const response = await fetch("/odata/v4/marketplace/Incubators", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(incubatorData),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create incubator: ${response.status} - ${errorText}`);
-  }
-
-  return await response.json();
-}
-
 export async function createIncubationCycle(cycleData) {
-  const response = await fetch("/odata/v4/marketplace/IncubationCycles", {
+  const response = await fetch(`${API_BASE}/IncubationCycles`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -291,16 +274,13 @@ export async function createIncubationCycle(cycleData) {
 }
 
 export async function updateIncubationCycle(id, cycleData) {
-  const response = await fetch(
-    `/odata/v4/marketplace/IncubationCycles('${id}')`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(cycleData),
-    }
-  );
+  const response = await fetch(`${API_BASE}/IncubationCycles('${id}')`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(cycleData),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -313,12 +293,9 @@ export async function updateIncubationCycle(id, cycleData) {
 }
 
 export async function deleteIncubationCycle(id) {
-  const response = await fetch(
-    `/odata/v4/marketplace/IncubationCycles('${id}')`,
-    {
-      method: "DELETE",
-    }
-  );
+  const response = await fetch(`${API_BASE}/IncubationCycles('${id}')`, {
+    method: "DELETE",
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -331,7 +308,7 @@ export async function deleteIncubationCycle(id) {
 }
 
 export async function createPlace(placeData) {
-  const response = await fetch("/odata/v4/marketplace/Places", {
+  const response = await fetch(`${API_BASE}/Places`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -348,7 +325,7 @@ export async function createPlace(placeData) {
 }
 
 export async function updatePlace(id, placeData) {
-  const response = await fetch(`/odata/v4/marketplace/Places('${id}')`, {
+  const response = await fetch(`${API_BASE}/Places('${id}')`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -365,7 +342,7 @@ export async function updatePlace(id, placeData) {
 }
 
 export async function deletePlace(id) {
-  const response = await fetch(`/odata/v4/marketplace/Places('${id}')`, {
+  const response = await fetch(`${API_BASE}/Places('${id}')`, {
     method: "DELETE",
   });
 
@@ -378,7 +355,7 @@ export async function deletePlace(id) {
 }
 
 export async function createCage(cageData) {
-  const response = await fetch("/odata/v4/marketplace/Cages", {
+  const response = await fetch(`${API_BASE}/Cages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -395,7 +372,7 @@ export async function createCage(cageData) {
 }
 
 export async function updateCage(id, cageData) {
-  const response = await fetch(`/odata/v4/marketplace/Cages('${id}')`, {
+  const response = await fetch(`${API_BASE}/Cages('${id}')`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -412,7 +389,7 @@ export async function updateCage(id, cageData) {
 }
 
 export async function deleteCage(id) {
-  const response = await fetch(`/odata/v4/marketplace/Cages('${id}')`, {
+  const response = await fetch(`${API_BASE}/Cages('${id}')`, {
     method: "DELETE",
   });
 
@@ -425,7 +402,7 @@ export async function deleteCage(id) {
 }
 
 export async function createEquipment(equipmentData) {
-  const response = await fetch("/odata/v4/marketplace/Equipments", {
+  const response = await fetch(`${API_BASE}/Equipments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -442,7 +419,7 @@ export async function createEquipment(equipmentData) {
 }
 
 export async function updateEquipment(id, equipmentData) {
-  const response = await fetch(`/odata/v4/marketplace/Equipments('${id}')`, {
+  const response = await fetch(`${API_BASE}/Equipments('${id}')`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -459,7 +436,7 @@ export async function updateEquipment(id, equipmentData) {
 }
 
 export async function deleteEquipment(id) {
-  const response = await fetch(`/odata/v4/marketplace/Equipments('${id}')`, {
+  const response = await fetch(`${API_BASE}/Equipments('${id}')`, {
     method: "DELETE",
   });
 
@@ -471,25 +448,8 @@ export async function deleteEquipment(id) {
   return true;
 }
 
-export async function updateUser(id, userData) {
-  const response = await fetch(`/odata/v4/marketplace/Users('${id}')`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(userData),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to update user: ${response.status} - ${errorText}`);
-  }
-
-  return true;
-}
-
 export async function fetchLearningCategories() {
-  const response = await fetch("/odata/v4/marketplace/LearningCategories");
+  const response = await fetch(`${API_BASE}/LearningCategories`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch learning categories: ${response.status}`);
@@ -501,7 +461,7 @@ export async function fetchLearningCategories() {
 
 export async function fetchLearningArticles() {
   const response = await fetch(
-    "/odata/v4/marketplace/LearningArticles?$expand=category"
+    `${API_BASE}/LearningArticles?$expand=category`
   );
 
   if (!response.ok) {
@@ -512,10 +472,12 @@ export async function fetchLearningArticles() {
   return data.value;
 }
 
-
 export async function deleteLearningArticle(articleId) {
-  const response = await fetch(`/odata/v4/marketplace/LearningArticles/${articleId}`, {
+  const response = await fetch(`${API_BASE}/LearningArticles('${articleId}')`, {
     method: "DELETE",
+    headers: {
+      "x-user-email": getCurrentUser()?.email || "",
+    },
   });
 
   if (!response.ok) {
@@ -527,12 +489,10 @@ export async function deleteLearningArticle(articleId) {
 }
 
 export async function updateLearningArticle(articleId, payload) {
-  const response = await fetch(`/odata/v4/marketplace/LearningArticles/${articleId}`, {
+  const response = await fetch(`${API_BASE}/LearningArticles('${articleId}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -543,23 +503,91 @@ export async function updateLearningArticle(articleId, payload) {
   return response.json();
 }
 
-const API_BASE = "/odata/v4/marketplace";
-
 export async function createLearningArticle(payload) {
-  const currentUser = getCurrentUser();
-
   const response = await fetch(`${API_BASE}/LearningArticles`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": currentUser?.ID || ""
-    },
-    body: JSON.stringify(payload)
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(errorText || "Failed to create learning article");
+  }
+
+  return response.json();
+}
+
+export async function fetchUsers() {
+  const response = await fetch(`${API_BASE}/Users?$expand=country`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch users: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.value || [];
+}
+
+export async function updateProfile(id, updates) {
+  const response = await fetch(`${API_BASE}/Users('${id}')`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update profile: ${response.status} - ${errorText}`);
+  }
+
+  return true;
+}
+
+export async function updateUser(id, updates) {
+  const response = await fetch(`${API_BASE}/Users('${id}')`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update user: ${response.status} - ${errorText}`);
+  }
+
+  return true;
+}
+
+export async function deleteUser(id) {
+  const response = await fetch(`${API_BASE}/Users('${id}')`, {
+    method: "DELETE",
+    headers: {
+      "x-user-email": getCurrentUser()?.email || "",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to delete user: ${response.status} - ${errorText}`);
+  }
+
+  return true;
+}
+
+export async function createUser(userData) {
+  const response = await fetch(`${API_BASE}/Users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(userData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create user: ${response.status} - ${errorText}`);
   }
 
   return response.json();
