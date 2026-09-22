@@ -375,6 +375,18 @@
 "onlyAuthorizedUsersCanEditArticles": "Seuls les administrateurs ou le propriétaire peuvent modifier les articles.",
 "marketplaceNeedsInternet": "Une connexion Internet est nécessaire pour voir la marketplace.",
 "offlineMarketplaceHint": "Veuillez vous reconnecter pour charger les produits en direct depuis la marketplace.",
+"offlineLearningMode": "Mode d’apprentissage hors ligne",
+"showingCachedLearningContent": "Affichage du contenu d’apprentissage mis en cache sur cet appareil.",
+"noOfflineLearningContent": "Aucun contenu d’apprentissage hors ligne n’est encore disponible.",
+"offlineAnimalsMode": "Mode hors ligne des animaux",
+"showingCachedAnimals": "Affichage des données animales mises en cache sur cet appareil.",
+"noOfflineAnimalsAvailable": "Aucune donnée animale hors ligne n’est encore disponible.",
+"internetRequiredToDeleteAnimal": "Une connexion Internet est nécessaire pour supprimer les animaux pour le moment.",
+"animalSavedOffline": "L’animal a été enregistré hors ligne et sera synchronisé lorsque l’Internet sera disponible.",
+"newAnimalsWillBeSavedOffline": "Les nouveaux animaux créés maintenant seront enregistrés hors ligne et synchronisés plus tard.",
+"pendingSync": "Synchronisation en attente",
+"animalUpdatedOffline": "L’animal a été mis à jour hors ligne et sera synchronisé lorsque l’Internet sera disponible.",
+"animalUpdatesWillBeSavedOffline": "Les modifications effectuées maintenant seront enregistrées hors ligne et synchronisées plus tard.",
 
   "categoriesMap": {
     "All": "Tous",

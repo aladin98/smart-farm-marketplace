@@ -375,6 +375,18 @@
 "onlyAuthorizedUsersCanEditArticles": "يمكن فقط للمسؤولين أو المالك تعديل المقالات.",
 "marketplaceNeedsInternet": "يلزم الاتصال بالإنترنت لعرض السوق.",
 "offlineMarketplaceHint": "يرجى إعادة الاتصال لتحميل المنتجات المباشرة من السوق.",
+"offlineLearningMode": "وضع التعلم دون اتصال",
+"showingCachedLearningContent": "يتم عرض المحتوى التعليمي المخزن محليًا على هذا الجهاز.",
+"noOfflineLearningContent": "لا يوجد محتوى تعليمي متاح دون اتصال حتى الآن.",
+"offlineAnimalsMode": "وضع الحيوانات دون اتصال",
+"showingCachedAnimals": "يتم عرض بيانات الحيوانات المخزنة محليًا على هذا الجهاز.",
+"noOfflineAnimalsAvailable": "لا توجد بيانات حيوانات متاحة دون اتصال حتى الآن.",
+"internetRequiredToDeleteAnimal": "يلزم الاتصال بالإنترنت لحذف الحيوانات في الوقت الحالي.",
+"animalSavedOffline": "تم حفظ الحيوان دون اتصال وسيتم مزامنته عند توفر الإنترنت.",
+"newAnimalsWillBeSavedOffline": "سيتم حفظ الحيوانات الجديدة التي يتم إنشاؤها الآن دون اتصال ومزامنتها لاحقًا.",
+"pendingSync": "في انتظار المزامنة",
+"animalUpdatedOffline": "تم تحديث الحيوان دون اتصال وسيتم مزامنته عند توفر الإنترنت.",
+"animalUpdatesWillBeSavedOffline": "سيتم حفظ التغييرات التي تتم الآن دون اتصال ومزامنتها لاحقًا.",
 
   "categoriesMap": {
     "All": "الكل",

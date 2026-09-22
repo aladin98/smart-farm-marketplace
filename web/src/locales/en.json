@@ -375,6 +375,18 @@
 "onlyAuthorizedUsersCanEditArticles": "Only admins or the owner can edit articles.",
 "marketplaceNeedsInternet": "Internet connection is required to view the marketplace.",
 "offlineMarketplaceHint": "Please reconnect to load live products from the marketplace.",
+"offlineLearningMode": "Offline learning mode",
+"showingCachedLearningContent": "Showing cached learning content stored on this device.",
+"noOfflineLearningContent": "No offline learning content available yet.",
+"offlineAnimalsMode": "Offline animals mode",
+"showingCachedAnimals": "Showing cached animal data stored on this device.",
+"noOfflineAnimalsAvailable": "No offline animal data available yet.",
+"internetRequiredToDeleteAnimal": "Internet connection is required to delete animals for now.",
+"animalSavedOffline": "Animal saved offline and will sync when internet is available.",
+"newAnimalsWillBeSavedOffline": "New animals created now will be saved offline and synced later.",
+"pendingSync": "Pending sync",
+"animalUpdatedOffline": "Animal updated offline and will sync when internet is available.",
+"animalUpdatesWillBeSavedOffline": "Changes made now will be saved offline and synced later.",
 
   "categoriesMap": {
     "All": "All",

@@ -9,7 +9,9 @@ import { getCurrentUser, isAdmin } from "../services/auth";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+
+const LEARNING_CATEGORIES_CACHE_KEY = "learningCategoriesCache";
+const LEARNING_ARTICLES_CACHE_KEY = "learningArticlesCache";
 
 function Learning() {
   const navigate = useNavigate();
@@ -23,9 +25,56 @@ function Learning() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOfflineMode(false);
+    }
+
+    function handleOffline() {
+      setIsOfflineMode(true);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadLearning() {
+      setLoading(true);
+      setError("");
+
+      if (!navigator.onLine) {
+        try {
+          const cachedCategories = JSON.parse(
+            localStorage.getItem(LEARNING_CATEGORIES_CACHE_KEY) || "[]"
+          );
+          const cachedArticles = JSON.parse(
+            localStorage.getItem(LEARNING_ARTICLES_CACHE_KEY) || "[]"
+          );
+
+          setCategories(cachedCategories);
+          setArticles(cachedArticles);
+
+          if (cachedCategories.length === 0 && cachedArticles.length === 0) {
+            setError(t("noOfflineLearningContent"));
+          }
+        } catch (err) {
+          console.error(err);
+          setError(t("failedToLoadLearningContent"));
+        } finally {
+          setLoading(false);
+        }
+
+        return;
+      }
+
       try {
         const [cats, arts] = await Promise.all([
           fetchLearningCategories(),
@@ -34,9 +83,36 @@ function Learning() {
 
         setCategories(cats);
         setArticles(arts);
+
+        localStorage.setItem(
+          LEARNING_CATEGORIES_CACHE_KEY,
+          JSON.stringify(cats)
+        );
+        localStorage.setItem(
+          LEARNING_ARTICLES_CACHE_KEY,
+          JSON.stringify(arts)
+        );
       } catch (err) {
         console.error(err);
-        setError(t("failedToLoadLearningContent"));
+
+        try {
+          const cachedCategories = JSON.parse(
+            localStorage.getItem(LEARNING_CATEGORIES_CACHE_KEY) || "[]"
+          );
+          const cachedArticles = JSON.parse(
+            localStorage.getItem(LEARNING_ARTICLES_CACHE_KEY) || "[]"
+          );
+
+          if (cachedCategories.length > 0 || cachedArticles.length > 0) {
+            setCategories(cachedCategories);
+            setArticles(cachedArticles);
+            setIsOfflineMode(true);
+          } else {
+            setError(t("failedToLoadLearningContent"));
+          }
+        } catch {
+          setError(t("failedToLoadLearningContent"));
+        }
       } finally {
         setLoading(false);
       }
@@ -62,7 +138,18 @@ function Learning() {
         backTo="/"
       />
 
-      {canManageLearning && (
+      {isOfflineMode && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineLearningMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("showingCachedLearningContent")}
+          </p>
+        </div>
+      )}
+
+      {canManageLearning && navigator.onLine && (
         <div className="mb-6">
           <button
             onClick={() => navigate("/learning/add")}

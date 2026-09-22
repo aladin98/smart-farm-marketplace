@@ -2,11 +2,18 @@ import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { fetchFarmAnimalsByOwner, deleteFarmAnimal } from "../services/api";
+import {
+  fetchFarmAnimalsByOwner,
+  deleteFarmAnimal,
+  createFarmAnimal,
+  updateFarmAnimal,
+} from "../services/api";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+
+const getAnimalsCacheKey = (userId) => `myFarmAnimalsCache_${userId}`;
+const getAnimalsPendingKey = (userId) => `myFarmAnimalsPending_${userId}`;
 
 function MyAnimals() {
   const navigate = useNavigate();
@@ -16,6 +23,72 @@ function MyAnimals() {
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
+
+  async function syncPendingAnimals(userId) {
+    const pendingKey = getAnimalsPendingKey(userId);
+    const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+
+    if (pendingAnimals.length === 0) return;
+
+    const stillPending = [];
+
+    for (const animal of pendingAnimals) {
+      try {
+        const payload = {
+          owner_ID: animal.owner_ID,
+          animalType_ID: animal.animalType_ID,
+          customName: animal.customName,
+          groupNumber: animal.groupNumber,
+          age: animal.age,
+          sourceType: animal.sourceType,
+          quantity: animal.quantity,
+          notes: animal.notes,
+          photoUrl: animal.photoUrl,
+        };
+
+        if (animal.variant_ID) payload.variant_ID = animal.variant_ID;
+        if (animal.place_ID) payload.place_ID = animal.place_ID;
+        if (animal.cage_ID) payload.cage_ID = animal.cage_ID;
+
+        if (animal.syncAction === "delete") {
+          if (!String(animal.ID).startsWith("offline-")) {
+            await deleteFarmAnimal(animal.ID);
+          }
+        } else if (
+          animal.syncAction === "update" &&
+          !String(animal.ID).startsWith("offline-")
+        ) {
+          await updateFarmAnimal(animal.ID, payload);
+        } else {
+          await createFarmAnimal(payload);
+        }
+      } catch (error) {
+        console.error("Failed to sync animal:", error);
+        stillPending.push(animal);
+      }
+    }
+
+    localStorage.setItem(pendingKey, JSON.stringify(stillPending));
+  }
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOfflineMode(false);
+    }
+
+    function handleOffline() {
+      setIsOfflineMode(true);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadAnimals() {
@@ -25,12 +98,48 @@ function MyAnimals() {
         return;
       }
 
+      const cacheKey = getAnimalsCacheKey(currentUser.ID);
+
+      if (!navigator.onLine) {
+        try {
+          const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+          setAnimals(cachedAnimals);
+
+          if (cachedAnimals.length === 0) {
+            setError(t("noOfflineAnimalsAvailable"));
+          }
+        } catch (err) {
+          console.error(err);
+          setError(t("failedToLoadAnimals"));
+        } finally {
+          setLoading(false);
+        }
+
+        return;
+      }
+
       try {
+        await syncPendingAnimals(currentUser.ID);
+
         const data = await fetchFarmAnimalsByOwner(currentUser.ID);
         setAnimals(data);
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        setError("");
       } catch (err) {
         console.error(err);
-        setError(t("failedToLoadAnimals"));
+
+        try {
+          const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+
+          if (cachedAnimals.length > 0) {
+            setAnimals(cachedAnimals);
+            setIsOfflineMode(true);
+          } else {
+            setError(t("failedToLoadAnimals"));
+          }
+        } catch {
+          setError(t("failedToLoadAnimals"));
+        }
       } finally {
         setLoading(false);
       }
@@ -43,9 +152,54 @@ function MyAnimals() {
     const confirmed = window.confirm(t("areYouSureDeleteAnimal"));
     if (!confirmed) return;
 
+    if (!currentUser?.ID) return;
+
+    const cacheKey = getAnimalsCacheKey(currentUser.ID);
+    const pendingKey = getAnimalsPendingKey(currentUser.ID);
+
+    const currentAnimal = animals.find((animal) => animal.ID === animalId);
+    if (!currentAnimal) return;
+
+    if (!navigator.onLine) {
+      const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+      const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+
+      const updatedCache = cachedAnimals.filter((animal) => animal.ID !== animalId);
+
+      let updatedPending;
+
+      if (String(animalId).startsWith("offline-")) {
+        // If it was created offline and not synced yet, remove it completely
+        updatedPending = pendingAnimals.filter((animal) => animal.ID !== animalId);
+      } else {
+        // If it exists on backend, mark delete pending
+        const withoutSame = pendingAnimals.filter((animal) => animal.ID !== animalId);
+
+        updatedPending = [
+          {
+            ...currentAnimal,
+            pendingSync: true,
+            syncAction: "delete",
+          },
+          ...withoutSame,
+        ];
+      }
+
+      localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+      localStorage.setItem(pendingKey, JSON.stringify(updatedPending));
+
+      setAnimals(updatedCache);
+      setError("");
+      return;
+    }
+
     try {
       await deleteFarmAnimal(animalId);
-      setAnimals((prev) => prev.filter((animal) => animal.ID !== animalId));
+
+      const updatedAnimals = animals.filter((animal) => animal.ID !== animalId);
+      setAnimals(updatedAnimals);
+
+      localStorage.setItem(cacheKey, JSON.stringify(updatedAnimals));
     } catch (error) {
       console.error(error);
       setError(t("failedToDeleteAnimal"));
@@ -59,6 +213,17 @@ function MyAnimals() {
         subtitle={t("manageAnimals")}
         backTo="/my-farm"
       />
+
+      {isOfflineMode && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineAnimalsMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("showingCachedAnimals")}
+          </p>
+        </div>
+      )}
 
       <div className="mb-6">
         <button
@@ -93,9 +258,17 @@ function MyAnimals() {
               />
 
               <div className="p-4">
-                <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-2">
-                  {animal.animalType?.name || t("unknownType")}
-                </span>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1">
+                    {animal.animalType?.name || t("unknownType")}
+                  </span>
+
+                  {animal.pendingSync && (
+                    <span className="inline-block bg-orange-100 text-orange-700 text-xs font-medium rounded-full px-3 py-1">
+                      {t("pendingSync")}
+                    </span>
+                  )}
+                </div>
 
                 <h2 className="text-xl font-bold text-gray-900">
                   {animal.customName || animal.variant?.name || t("unnamedAnimal")}

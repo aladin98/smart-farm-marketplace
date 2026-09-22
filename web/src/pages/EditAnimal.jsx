@@ -10,6 +10,9 @@ import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
 
+const getAnimalsCacheKey = (userId) => `myFarmAnimalsCache_${userId}`;
+const getAnimalsPendingKey = (userId) => `myFarmAnimalsPending_${userId}`;
+
 function EditAnimal() {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -41,6 +44,11 @@ function EditAnimal() {
   useEffect(() => {
     async function loadData() {
       if (!currentUser || !animal) {
+        setLoading(false);
+        return;
+      }
+
+      if (!navigator.onLine) {
         setLoading(false);
         return;
       }
@@ -136,8 +144,64 @@ function EditAnimal() {
     setSubmitting(true);
     setMessage("");
 
+    const payload = {
+      customName: formData.customName,
+      groupNumber: formData.groupNumber,
+      age: formData.age,
+      sourceType: formData.sourceType,
+      quantity: parseInt(formData.quantity, 10),
+      notes: formData.notes,
+      photoUrl: formData.photoUrl,
+      place_ID: formData.place_ID || "",
+      cage_ID: formData.cage_ID || "",
+    };
+
     try {
-      const payload = {
+      if (!navigator.onLine && currentUser?.ID) {
+        const cacheKey = getAnimalsCacheKey(currentUser.ID);
+        const pendingKey = getAnimalsPendingKey(currentUser.ID);
+
+        const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+        const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+
+        const updatedAnimal = {
+          ...animal,
+          ...payload,
+          pendingSync: true,
+          syncAction: animal.syncAction === "create" ? "create" : "update",
+          place:
+            places.find((place) => place.ID === payload.place_ID) || animal.place || null,
+          cage:
+            cages.find((cage) => cage.ID === payload.cage_ID) || animal.cage || null,
+        };
+
+        const updatedCache = cachedAnimals.map((item) =>
+          item.ID === animal.ID ? updatedAnimal : item
+        );
+
+        const existingPendingIndex = pendingAnimals.findIndex((item) => item.ID === animal.ID);
+
+        let updatedPending;
+        if (existingPendingIndex >= 0) {
+          updatedPending = [...pendingAnimals];
+          updatedPending[existingPendingIndex] = updatedAnimal;
+        } else {
+          updatedPending = [updatedAnimal, ...pendingAnimals];
+        }
+
+        localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+        localStorage.setItem(pendingKey, JSON.stringify(updatedPending));
+
+        setMessage(t("animalUpdatedOffline"));
+
+        setTimeout(() => {
+          navigate("/my-farm/animals");
+        }, 1000);
+
+        return;
+      }
+
+      const onlinePayload = {
         customName: formData.customName,
         groupNumber: formData.groupNumber,
         age: formData.age,
@@ -147,10 +211,10 @@ function EditAnimal() {
         photoUrl: formData.photoUrl,
       };
 
-      if (formData.place_ID) payload.place_ID = formData.place_ID;
-      if (formData.cage_ID) payload.cage_ID = formData.cage_ID;
+      if (formData.place_ID) onlinePayload.place_ID = formData.place_ID;
+      if (formData.cage_ID) onlinePayload.cage_ID = formData.cage_ID;
 
-      await updateFarmAnimal(animal.ID, payload);
+      await updateFarmAnimal(animal.ID, onlinePayload);
 
       setMessage(t("animalUpdatedSuccessfully"));
 
@@ -173,6 +237,17 @@ function EditAnimal() {
       >
         ← {t("back")}
       </button>
+
+      {!navigator.onLine && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineAnimalsMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("animalUpdatesWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
