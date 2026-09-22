@@ -18,7 +18,56 @@ export default cds.service.impl(async function () {
     return req.data?.ID || req.params?.[0]?.ID;
   }
 
-  // Learning articles -> admin only
+  // -----------------------------------
+  // Auth actions
+  // -----------------------------------
+  this.on("login", async (req) => {
+    const { email, password } = req.data;
+
+    if (!email || !password) {
+      return req.reject(400, "Email and password are required");
+    }
+
+    const user = await SELECT.one.from(Users).where({ email });
+
+    if (!user || user.passwordHash !== password) {
+      return req.reject(401, "Invalid email or password");
+    }
+
+    return user;
+  });
+
+  this.on("me", async (req) => {
+    const email = getRequestEmail(req);
+
+    if (!email) {
+      return req.reject(401, "Unauthorized");
+    }
+
+    const user = await SELECT.one.from(Users).where({ email });
+
+    if (!user) {
+      return req.reject(404, "User not found");
+    }
+
+    return user;
+  });
+    this.before("CREATE", Users, async (req) => {
+  const email = req.data?.email;
+
+  if (!email) {
+    return req.reject(400, "Email is required");
+  }
+
+  const existingUser = await SELECT.one.from(Users).where({ email });
+
+  if (existingUser) {
+    return req.reject(409, "Email already exists");
+  }
+});
+  // -----------------------------------
+  // Learning articles -> admin or owner
+  // -----------------------------------
   this.before(["CREATE", "UPDATE", "DELETE"], LearningArticles, async (req) => {
     const email = getRequestEmail(req);
 
@@ -28,19 +77,21 @@ export default cds.service.impl(async function () {
 
     const currentUser = await SELECT.one.from(Users).where({ email });
 
-    if (!currentUser || currentUser.role !== "admin") {
-      return req.reject(403, "Only admins can manage learning articles");
+    if (
+      !currentUser ||
+      (currentUser.role !== "admin" && currentUser.role !== "owner")
+    ) {
+      return req.reject(403, "Only admin or owner can manage learning articles");
     }
   });
 
+  // -----------------------------------
   // Users UPDATE
+  // owner can update anyone
+  // others can update only their own profile
+  // -----------------------------------
   this.before("UPDATE", Users, async (req) => {
     const email = getRequestEmail(req);
-
-    console.log("UPDATE Users -> x-user-email:", req.headers?.["x-user-email"]);
-    console.log("UPDATE Users -> resolved email:", email);
-    console.log("UPDATE Users -> req.data:", req.data);
-    console.log("UPDATE Users -> req.params:", req.params);
 
     if (!email) {
       return req.reject(403, "Unauthorized: missing user email");
@@ -48,13 +99,10 @@ export default cds.service.impl(async function () {
 
     const currentUser = await SELECT.one.from(Users).where({ email });
 
-    console.log("UPDATE Users -> currentUser:", currentUser);
-
     if (!currentUser) {
       return req.reject(403, "Unauthorized: user not found");
     }
 
-    // owner can update anyone
     if (currentUser.role === "owner") {
       return;
     }
@@ -67,24 +115,22 @@ export default cds.service.impl(async function () {
 
     const targetUser = await SELECT.one.from(Users).where({ ID: targetUserId });
 
-    console.log("UPDATE Users -> targetUser:", targetUser);
-
     if (!targetUser) {
       return req.reject(404, "User not found");
     }
 
-    // normal user can update only own profile
     if (targetUser.email !== email) {
       return req.reject(403, "You can only update your own profile");
     }
 
-    // normal user cannot change protected fields
     if ("role" in req.data || "isActive" in req.data) {
       return req.reject(403, "You cannot update protected fields");
     }
   });
 
+  // -----------------------------------
   // Users DELETE -> owner only
+  // -----------------------------------
   this.before("DELETE", Users, async (req) => {
     const email = getRequestEmail(req);
 

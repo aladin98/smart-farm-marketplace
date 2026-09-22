@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { fetchPlacesByOwner, updateCage } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function EditCage() {
   const navigate = useNavigate();

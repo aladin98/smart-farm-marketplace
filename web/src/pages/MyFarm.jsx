@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 import {
   fetchFarmAnimalsByOwner,
   fetchIncubatorsByOwner,

@@ -126,14 +126,15 @@ function UserManagement() {
 
                 <div className="flex flex-col gap-3 sm:min-w-[180px]">
                   <select
-                    value={user.role || "user"}
-                    onChange={(e) => handleRoleChange(user.ID, e.target.value)}
-                    className="rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
-                    disabled={user.ID === currentUser.ID}
-                  >
-                    <option value="user">{t("userRole")}</option>
-                    <option value="owner">{t("ownerRole")}</option>
-                  </select>
+  value={user.role || "user"}
+  onChange={(e) => handleRoleChange(user.ID, e.target.value)}
+  className="rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
+  disabled={user.ID === currentUser.ID}
+>
+  <option value="user">{t("userRole")}</option>
+  <option value="admin">{t("adminRole")}</option>
+  <option value="owner">{t("ownerRole")}</option>
+</select>
 
                   <button
                     onClick={() => handleDeleteUser(user.ID)}

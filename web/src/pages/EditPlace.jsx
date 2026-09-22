@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { updatePlace } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function EditPlace() {
   const navigate = useNavigate();

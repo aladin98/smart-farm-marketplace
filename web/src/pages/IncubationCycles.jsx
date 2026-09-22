@@ -6,6 +6,7 @@ import {
   deleteIncubationCycle,
 } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function IncubationCycles() {
   const navigate = useNavigate();

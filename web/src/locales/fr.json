@@ -368,6 +368,13 @@
 "userRole": "Utilisateur",
 "ownerRole": "Propriétaire",
 "emailAlreadyExists": "Un compte avec cet e-mail existe déjà.",
+"adminRole": "Administrateur",
+"failedToProcessImage": "Échec du traitement de l'image.",
+"articlePreview": "Aperçu de l'article",
+"orUploadImage": "Ou téléchargez une image",
+"onlyAuthorizedUsersCanEditArticles": "Seuls les administrateurs ou le propriétaire peuvent modifier les articles.",
+"marketplaceNeedsInternet": "Une connexion Internet est nécessaire pour voir la marketplace.",
+"offlineMarketplaceHint": "Veuillez vous reconnecter pour charger les produits en direct depuis la marketplace.",
 
   "categoriesMap": {
     "All": "Tous",

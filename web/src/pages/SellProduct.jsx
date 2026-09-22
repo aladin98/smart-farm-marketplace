@@ -4,6 +4,7 @@ import { createProduct, fetchCategories } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function SellProduct() {
   const navigate = useNavigate();
@@ -58,23 +59,22 @@ function SellProduct() {
     }));
   }
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const resizedPhoto = await resizeImage(file, 1000, 700, 0.8);
 
-    reader.onloadend = () => {
-      const base64String = reader.result;
-      setPhotoPreview(base64String);
-
+      setPhotoPreview(resizedPhoto);
       setFormData((prev) => ({
         ...prev,
-        photoUrl: base64String,
+        photoUrl: resizedPhoto,
       }));
-    };
-
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -134,9 +134,7 @@ function SellProduct() {
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("sellProduct")}
         </h1>
-        <p className="text-gray-600 mb-2">
-          {t("sellProductSubtitle")}
-        </p>
+        <p className="text-gray-600 mb-2">{t("sellProductSubtitle")}</p>
 
         {currentUser && (
           <p className="text-sm text-green-700 mb-6">

@@ -6,6 +6,7 @@ import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function MyEquipments() {
   const navigate = useNavigate();

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { createIncubator } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function AddIncubator() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function AddIncubator() {
     condition: "New",
     capacity: "",
     notes: "",
+    photoUrl: "",
   });
 
   function handleChange(e) {
@@ -29,17 +31,22 @@ function AddIncubator() {
     }));
   }
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const resizedPhoto = await resizeImage(file, 1000, 700, 0.8);
 
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
-
-    reader.readAsDataURL(file);
+      setPhotoPreview(resizedPhoto);
+      setFormData((prev) => ({
+        ...prev,
+        photoUrl: resizedPhoto,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -60,6 +67,7 @@ function AddIncubator() {
         condition: formData.condition,
         capacity: parseInt(formData.capacity, 10),
         notes: formData.notes,
+        photoUrl: formData.photoUrl,
       };
 
       await createIncubator(payload);
@@ -90,9 +98,7 @@ function AddIncubator() {
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("addIncubator")}
         </h1>
-        <p className="text-gray-600 mb-6">
-          {t("addIncubatorSubtitle")}
-        </p>
+        <p className="text-gray-600 mb-6">{t("addIncubatorSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -15,4 +15,8 @@ service marketplace {
   entity Equipments         as projection on db.Equipments;
   entity LearningCategories as projection on db.LearningCategories;
   entity LearningArticles   as projection on db.LearningArticles;
+
+  action login(email: String, password: String) returns Users;
+function me() returns Users;
+
 }

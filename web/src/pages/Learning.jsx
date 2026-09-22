@@ -5,16 +5,17 @@ import {
   fetchLearningCategories,
   fetchLearningArticles,
 } from "../services/api";
-import { getCurrentUser } from "../services/auth";
+import { getCurrentUser, isAdmin } from "../services/auth";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function Learning() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role === "admin";
+  const canManageLearning = isAdmin();
 
   const [categories, setCategories] = useState([]);
   const [articles, setArticles] = useState([]);
@@ -61,7 +62,7 @@ function Learning() {
         backTo="/"
       />
 
-      {isAdmin && (
+      {canManageLearning && (
         <div className="mb-6">
           <button
             onClick={() => navigate("/learning/add")}

@@ -4,6 +4,7 @@ import { fetchCountries } from "../services/api";
 import { registerUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { resizeImage } from "../utils/image";
 
 function Register() {
   const navigate = useNavigate();
@@ -58,18 +59,23 @@ function Register() {
     }));
   }
 
-  function handlePhotoChange(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setPhotoPreview(previewUrl);
+  async function handlePhotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
 
-      setFormData((prev) => ({
-        ...prev,
-        profilePhoto: previewUrl,
-      }));
-    }
+  try {
+    const resizedImage = await resizeImage(file, 300, 300, 0.7);
+
+    setPhotoPreview(resizedImage);
+    setFormData((prev) => ({
+      ...prev,
+      profilePhoto: resizedImage,
+    }));
+  } catch (error) {
+    console.error(error);
+    setMessage(t("failedToProcessImage"));
   }
+}
 
   async function handleSubmit(e) {
     e.preventDefault();

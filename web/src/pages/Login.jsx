@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchUsers } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { loginUser } from "../services/auth";
-import { authenticateUser } from "../services/auth";
+import { authenticateUser, refreshCurrentUser } from "../services/auth";
 
 function Login() {
   const navigate = useNavigate();
@@ -41,6 +41,8 @@ function Login() {
       setMessage(t("invalidEmailOrPassword"));
       return;
     }
+
+    await refreshCurrentUser();
 
     setMessage(t("loginSuccess"));
 

@@ -3,6 +3,7 @@ import fallbackImage from "../assets/images/fallback-product.jpg";
 import { getCurrencyByCountry } from "../utils/currency";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function ProductDetails() {
   const { state } = useLocation();

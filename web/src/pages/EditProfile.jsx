@@ -2,8 +2,9 @@ import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchCountries, updateProfile } from "../services/api";
-import { getCurrentUser, setCurrentUser } from "../services/auth";
+import { getCurrentUser, refreshCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function EditProfile() {
   const navigate = useNavigate();
@@ -70,22 +71,23 @@ function EditProfile() {
     }));
   }
 
-  function handlePhotoChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  async function handlePhotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
+  try {
+    const resizedImage = await resizeImage(file, 300, 300, 0.7);
 
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-      setFormData((prev) => ({
-        ...prev,
-        profilePhoto: reader.result,
-      }));
-    };
-
-    reader.readAsDataURL(file);
+    setPhotoPreview(resizedImage);
+    setFormData((prev) => ({
+      ...prev,
+      profilePhoto: resizedImage,
+    }));
+  } catch (error) {
+    console.error(error);
+    setMessage(t("failedToProcessImage"));
   }
+}
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -105,21 +107,14 @@ function EditProfile() {
 
       await updateProfile(currentUser.ID, payload);
 
-      const updatedUser = {
-        ...currentUser,
-        ...payload,
-        country:
-          countries.find((c) => c.ID === formData.country_ID) ||
-          currentUser.country,
-      };
+await refreshCurrentUser();
 
-      setCurrentUser(updatedUser);
+setMessage(t("profileUpdatedSuccessfully"));
 
-      setMessage(t("profileUpdatedSuccessfully"));
+setTimeout(() => {
+  navigate("/profile");
+}, 1000);
 
-      setTimeout(() => {
-        navigate("/profile");
-      }, 1000);
     } catch (error) {
       console.error(error);
       setMessage(`${t("failedToUpdateProfile")}: ${error.message}`);

@@ -5,6 +5,7 @@ import { fetchPlacesByOwner, deletePlace } from "../services/api";
 import PageHeader from "../components/PageHeader";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function MyPlaces() {
   const navigate = useNavigate();

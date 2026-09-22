@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { createEquipment } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function AddEquipment() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function AddEquipment() {
     condition: "New",
     quantity: "",
     notes: "",
+    photoUrl: "",
   });
 
   function handleChange(e) {
@@ -30,17 +32,22 @@ function AddEquipment() {
     }));
   }
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const resizedPhoto = await resizeImage(file, 1000, 700, 0.8);
 
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
-
-    reader.readAsDataURL(file);
+      setPhotoPreview(resizedPhoto);
+      setFormData((prev) => ({
+        ...prev,
+        photoUrl: resizedPhoto,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -62,6 +69,7 @@ function AddEquipment() {
         condition: formData.condition,
         quantity: parseInt(formData.quantity, 10),
         notes: formData.notes,
+        photoUrl: formData.photoUrl,
       };
 
       await createEquipment(payload);
@@ -92,9 +100,7 @@ function AddEquipment() {
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("addEquipment")}
         </h1>
-        <p className="text-gray-600 mb-6">
-          {t("addEquipmentSubtitle")}
-        </p>
+        <p className="text-gray-600 mb-6">{t("addEquipmentSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

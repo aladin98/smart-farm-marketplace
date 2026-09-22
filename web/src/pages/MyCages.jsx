@@ -5,6 +5,7 @@ import { getCurrentUser } from "../services/auth";
 import { fetchCagesByOwner, deleteCage } from "../services/api";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function MyCages() {
   const navigate = useNavigate();

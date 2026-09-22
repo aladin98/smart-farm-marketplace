@@ -368,6 +368,13 @@
 "userRole": "User",
 "ownerRole": "Owner",
 "emailAlreadyExists": "An account with this email already exists.",
+"adminRole": "Admin",
+"failedToProcessImage": "Failed to process image.",
+"articlePreview": "Article preview",
+"orUploadImage": "Or upload an image file",
+"onlyAuthorizedUsersCanEditArticles": "Only admins or the owner can edit articles.",
+"marketplaceNeedsInternet": "Internet connection is required to view the marketplace.",
+"offlineMarketplaceHint": "Please reconnect to load live products from the marketplace.",
 
   "categoriesMap": {
     "All": "All",

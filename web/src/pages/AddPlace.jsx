@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
 import { createPlace } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function AddPlace() {
   const navigate = useNavigate();

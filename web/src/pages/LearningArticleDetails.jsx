@@ -2,8 +2,9 @@ import BottomNav from "../components/BottomNav";
 import { useLocation, useNavigate } from "react-router-dom";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import { useTranslation } from "react-i18next";
-import { getCurrentUser } from "../services/auth";
+import { getCurrentUser, isAdmin } from "../services/auth";
 import { deleteLearningArticle } from "../services/api";
+import { resizeImage } from "../utils/image";
 
 function LearningArticleDetails() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ function LearningArticleDetails() {
   const article = state?.article;
   const { t } = useTranslation();
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role === "admin";
+  const canManageLearning = isAdmin();
 
   async function handleDelete() {
     if (!article) return;
@@ -82,27 +83,27 @@ function LearningArticleDetails() {
             {article.content}
           </p>
 
-          {isAdmin && (
-  <div className="mt-6 flex flex-col sm:flex-row gap-3">
-    <button
-      onClick={() =>
-        navigate(`/learning/edit/${article.ID}`, {
-          state: { article }
-        })
-      }
-      className="w-full sm:w-auto bg-green-700 text-white py-3 px-6 rounded-full font-semibold"
-    >
-      {t("editArticle")}
-    </button>
+          {canManageLearning && (
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() =>
+                  navigate(`/learning/edit/${article.ID}`, {
+                    state: { article }
+                  })
+                }
+                className="w-full sm:w-auto bg-green-700 text-white py-3 px-6 rounded-full font-semibold"
+              >
+                {t("editArticle")}
+              </button>
 
-    <button
-      onClick={handleDelete}
-      className="w-full sm:w-auto bg-red-50 text-red-600 py-3 px-6 rounded-full font-semibold border border-red-100"
-    >
-      {t("deleteArticle")}
-    </button>
-  </div>
-)}
+              <button
+                onClick={handleDelete}
+                className="w-full sm:w-auto bg-red-50 text-red-600 py-3 px-6 rounded-full font-semibold border border-red-100"
+              >
+                {t("deleteArticle")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -592,3 +592,36 @@ export async function createUser(userData) {
 
   return response.json();
 }
+
+export async function loginRequest(email, password) {
+  const response = await fetch(`${API_BASE}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Login failed: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchCurrentUser() {
+  const response = await fetch(`${API_BASE}/me()`, {
+    method: "GET",
+    headers: {
+      "x-user-email": getCurrentUser()?.email || "",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch current user: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
+}

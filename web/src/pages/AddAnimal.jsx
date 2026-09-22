@@ -10,6 +10,7 @@ import {
 } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function AddAnimal() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ function AddAnimal() {
     sourceType: "Hatched",
     quantity: "",
     notes: "",
+    photoUrl: "",
   });
 
   useEffect(() => {
@@ -133,17 +135,22 @@ function AddAnimal() {
     }));
   }
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const resizedPhoto = await resizeImage(file, 1000, 700, 0.8);
 
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
-
-    reader.readAsDataURL(file);
+      setPhotoPreview(resizedPhoto);
+      setFormData((prev) => ({
+        ...prev,
+        photoUrl: resizedPhoto,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -167,6 +174,7 @@ function AddAnimal() {
         sourceType: formData.sourceType,
         quantity: parseInt(formData.quantity, 10),
         notes: formData.notes,
+        photoUrl: formData.photoUrl,
       };
 
       if (formData.variant_ID) payload.variant_ID = formData.variant_ID;
@@ -201,9 +209,7 @@ function AddAnimal() {
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("addAnimal")}
         </h1>
-        <p className="text-gray-600 mb-6">
-          {t("addNewAnimalSubtitle")}
-        </p>
+        <p className="text-gray-600 mb-6">{t("addNewAnimalSubtitle")}</p>
 
         {loading ? (
           <p className="text-green-700">{t("loadingAnimalForm")}</p>

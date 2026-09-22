@@ -2,20 +2,23 @@ import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchLearningCategories, createLearningArticle } from "../services/api";
-import { getCurrentUser } from "../services/auth";
+import { getCurrentUser, isAdmin } from "../services/auth";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
+import fallbackImage from "../assets/images/fallback-product.jpg";
 
 function AddLearningArticle() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
 
-  const isAdmin = currentUser?.role === "admin";
+  const canManageLearning = isAdmin();
 
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -48,7 +51,7 @@ function AddLearningArticle() {
     loadCategories();
   }, [t]);
 
-  if (!currentUser || !isAdmin) {
+  if (!currentUser || !canManageLearning) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4 pb-24">
         <div className="bg-white rounded-[28px] shadow-sm p-6 text-center max-w-md w-full">
@@ -56,7 +59,7 @@ function AddLearningArticle() {
             {t("accessDenied")}
           </h2>
           <p className="text-gray-600 mb-4">
-            {t("onlyAdminsCanAddArticles")}
+            {t("onlyAuthorizedUsersCanAddArticles")}
           </p>
           <button
             onClick={() => navigate("/learning")}
@@ -73,10 +76,33 @@ function AddLearningArticle() {
 
   function handleChange(e) {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
+
+    if (name === "imageUrl") {
+      setImagePreview(value);
+    }
+  }
+
+  async function handleImageChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const resizedImage = await resizeImage(file, 800, 500, 0.8);
+
+      setImagePreview(resizedImage);
+      setFormData((prev) => ({
+        ...prev,
+        imageUrl: resizedImage
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -126,6 +152,27 @@ function AddLearningArticle() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-col items-center gap-3">
+            <img
+              src={imagePreview || fallbackImage}
+              alt={t("articlePreview")}
+              className="w-full max-w-md h-52 object-cover rounded-2xl border border-green-100 bg-green-50"
+              onError={(e) => {
+                e.currentTarget.src = fallbackImage;
+              }}
+            />
+
+            <label className="inline-block cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition">
+              {t("uploadPhoto")}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t("title")}
@@ -178,11 +225,14 @@ function AddLearningArticle() {
             <input
               type="text"
               name="imageUrl"
-              value={formData.imageUrl}
+              value={formData.imageUrl.startsWith("data:image") ? "" : formData.imageUrl}
               onChange={handleChange}
               placeholder={t("enterImageUrl")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {t("orUploadImage")}
+            </p>
           </div>
 
           <div>

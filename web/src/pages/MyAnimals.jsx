@@ -6,6 +6,7 @@ import { fetchFarmAnimalsByOwner, deleteFarmAnimal } from "../services/api";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function MyAnimals() {
   const navigate = useNavigate();

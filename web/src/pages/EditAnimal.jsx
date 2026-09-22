@@ -8,6 +8,7 @@ import {
 } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function EditAnimal() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ function EditAnimal() {
     sourceType: animal?.sourceType || "Hatched",
     quantity: animal?.quantity || "",
     notes: animal?.notes || "",
+    photoUrl: animal?.photoUrl || "",
   });
 
   useEffect(() => {
@@ -111,17 +113,22 @@ function EditAnimal() {
     }));
   }
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const resizedPhoto = await resizeImage(file, 1000, 700, 0.8);
 
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
-
-    reader.readAsDataURL(file);
+      setPhotoPreview(resizedPhoto);
+      setFormData((prev) => ({
+        ...prev,
+        photoUrl: resizedPhoto,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -137,6 +144,7 @@ function EditAnimal() {
         sourceType: formData.sourceType,
         quantity: parseInt(formData.quantity, 10),
         notes: formData.notes,
+        photoUrl: formData.photoUrl,
       };
 
       if (formData.place_ID) payload.place_ID = formData.place_ID;

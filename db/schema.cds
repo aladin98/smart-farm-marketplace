@@ -16,7 +16,7 @@ entity Users {
   phoneNumber       : String;
   idCardNumber      : String;
   city              : String;
-  profilePhoto      : String;
+  profilePhoto : LargeString;
   role              : String;
   country           : Association to Countries;
   isActive      : Boolean default true;
@@ -31,7 +31,7 @@ entity Products : cuid, managed {
   name              : String(150);
   age               : String(50);
   description       : String(1000);
-  photoUrl          : String(500);
+  photoUrl          : LargeString;
   deliveryAvailable : Boolean;
   condition         : String(30);
   isNegotiable      : Boolean;
@@ -47,7 +47,7 @@ entity Products : cuid, managed {
 entity AnimalTypes : cuid, managed {
   name         : localized String(100);
   description  : localized String(255);
-  photoUrl     : String(500);
+  photoUrl     : LargeString;
 }
 
 entity AnimalVariants : cuid, managed {
@@ -66,7 +66,7 @@ entity FarmAnimals : cuid, managed {
   groupNumber  : String(50);
   age          : String(50);
   sourceType   : String(50);
-  photoUrl     : String(500);
+  photoUrl     : LargeString;
   quantity     : Integer;
   notes        : String(1000);
 }
@@ -76,7 +76,7 @@ entity Incubators : cuid, managed {
   name         : String(150);
   condition    : String(30);   // New / Used
   capacity     : Integer;
-  photoUrl     : String(500);
+  photoUrl     : LargeString;
   notes        : String(1000);
 }
 
@@ -112,7 +112,7 @@ entity Equipments : cuid, managed {
   category     : String(100);
   condition    : String(30);
   quantity     : Integer;
-  photoUrl     : String(500);
+  photoUrl     : LargeString;
   notes        : String(1000);
 }
 
@@ -125,6 +125,6 @@ entity LearningArticles : cuid, managed {
   title        : localized String(200);
   summary      : localized String(500);
   content      : localized String(5000);
-  imageUrl     : String(500);
+  imageUrl          : LargeString;
   category     : Association to LearningCategories;
 }

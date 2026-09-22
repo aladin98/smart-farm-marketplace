@@ -368,6 +368,13 @@
 "userRole": "مستخدم",
 "ownerRole": "مالك",
 "emailAlreadyExists": "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
+"adminRole": "مسؤول",
+"failedToProcessImage": "فشل في معالجة الصورة.",
+"articlePreview": "معاينة المقال",
+"orUploadImage": "أو قم برفع صورة",
+"onlyAuthorizedUsersCanEditArticles": "يمكن فقط للمسؤولين أو المالك تعديل المقالات.",
+"marketplaceNeedsInternet": "يلزم الاتصال بالإنترنت لعرض السوق.",
+"offlineMarketplaceHint": "يرجى إعادة الاتصال لتحميل المنتجات المباشرة من السوق.",
 
   "categoriesMap": {
     "All": "الكل",

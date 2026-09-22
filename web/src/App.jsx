@@ -10,9 +10,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AddLearningArticle from "./pages/AddLearningArticle";
 import { categories } from "./data/products";
 import { fetchProductsByCountry } from "./services/api";
-import { getCurrentUser } from "./services/auth";
 import EditLearningArticle from "./pages/EditLearningArticle";
 import UserManagement from "./pages/UserManagement";
+import { getCurrentUser, refreshCurrentUser } from "./services/auth";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -46,6 +46,7 @@ import EditProfile from "./pages/EditProfile";
 import Learning from "./pages/Learning";
 import LearningArticleDetails from "./pages/LearningArticleDetails";
 import OwnerRoute from "./components/OwnerRoute";
+import AdminRoute from "./components/AdminRoute";
 
 function MarketplaceHome() {
   const navigate = useNavigate();
@@ -54,29 +55,56 @@ function MarketplaceHome() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const currentUser = getCurrentUser();
 
   useEffect(() => {
-    async function loadProducts() {
-      try {
-        if (!currentUser?.country_ID) {
-          setError(t("noLoggedUserCountryFound"));
-          setLoading(false);
-          return;
-        }
+  function handleOnline() {
+    setIsOnline(true);
+  }
 
-        const data = await fetchProductsByCountry(currentUser.country_ID);
-        setProducts(data);
-      } catch (err) {
-        console.error("Fetch products error:", err);
-        setError(`${t("couldNotLoadProducts")}: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
+  function handleOffline() {
+    setIsOnline(false);
+  }
+
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+
+  return () => {
+    window.removeEventListener("online", handleOnline);
+    window.removeEventListener("offline", handleOffline);
+  };
+}, []);
+
+  useEffect(() => {
+  async function loadProducts() {
+    if (!isOnline) {
+      setLoading(false);
+      setError(t("marketplaceNeedsInternet"));
+      return;
     }
 
-    loadProducts();
-  }, [currentUser, t]);
+    try {
+      if (!currentUser?.country_ID) {
+        setError(t("noLoggedUserCountryFound"));
+        setLoading(false);
+        return;
+      }
+
+      const data = await fetchProductsByCountry(currentUser.country_ID);
+      setProducts(data);
+      setError("");
+    } catch (err) {
+      console.error("Fetch products error:", err);
+      setError(`${t("couldNotLoadProducts")}: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  setLoading(true);
+  loadProducts();
+}, [currentUser, t, isOnline]);
 
   useEffect(() => {
     document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
@@ -126,11 +154,13 @@ function MarketplaceHome() {
         </button>
       </div>
 
-      <CategoryChips
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
+      {isOnline && (
+  <CategoryChips
+    categories={categories}
+    selectedCategory={selectedCategory}
+    onSelectCategory={setSelectedCategory}
+  />
+)}
 
       <div className="px-4 mt-6 flex items-center justify-between gap-4">
         <div>
@@ -158,26 +188,37 @@ function MarketplaceHome() {
       </div>
 
       <div className="px-4 mt-4 pb-28">
-        {loading && <p className="text-green-700">{t("loadingProducts")}</p>}
-        {error && <p className="text-red-600">{error}</p>}
+  {!isOnline && (
+    <div className="bg-white rounded-[24px] p-6 text-center shadow-sm border border-orange-100 mb-4">
+      <p className="text-orange-700 font-semibold">
+        {t("marketplaceNeedsInternet")}
+      </p>
+      <p className="text-sm text-gray-500 mt-1">
+        {t("offlineMarketplaceHint")}
+      </p>
+    </div>
+  )}
 
-        {!loading && !error && filteredProducts.length === 0 && (
-          <div className="bg-white rounded-[24px] p-6 text-center shadow-sm border border-green-50">
-            <p className="text-gray-700 font-medium">{t("noProductsFound")}</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {t("tryAnotherSearch")}
-            </p>
-          </div>
-        )}
+  {loading && <p className="text-green-700">{t("loadingProducts")}</p>}
+  {error && <p className="text-red-600">{error}</p>}
 
-        {!loading && !error && filteredProducts.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.ID} product={product} />
-            ))}
-          </div>
-        )}
-      </div>
+  {!loading && !error && filteredProducts.length === 0 && (
+    <div className="bg-white rounded-[24px] p-6 text-center shadow-sm border border-green-50">
+      <p className="text-gray-700 font-medium">{t("noProductsFound")}</p>
+      <p className="text-sm text-gray-500 mt-1">
+        {t("tryAnotherSearch")}
+      </p>
+    </div>
+  )}
+
+  {!loading && !error && filteredProducts.length > 0 && (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {filteredProducts.map((product) => (
+        <ProductCard key={product.ID} product={product} />
+      ))}
+    </div>
+  )}
+</div>
 
       <BottomNav />
     </div>
@@ -185,6 +226,18 @@ function MarketplaceHome() {
 }
 
 function App() {
+  useEffect(() => {
+    async function syncCurrentUser() {
+      const localUser = getCurrentUser();
+
+      if (!localUser) return;
+
+      await refreshCurrentUser();
+    }
+
+    syncCurrentUser();
+  }, []);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -222,6 +275,15 @@ function App() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile/edit"
+        element={
+          <ProtectedRoute>
+            <EditProfile />
           </ProtectedRoute>
         }
       />
@@ -387,57 +449,51 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
-  path="/profile/edit"
-  element={
-    <ProtectedRoute>
-      <EditProfile />
-    </ProtectedRoute>
-  }
-/>
-          <Route
-  path="/learning"
-  element={
-    <ProtectedRoute>
-      <Learning />
-    </ProtectedRoute>
-  }
-/>
+        path="/learning"
+        element={
+          <ProtectedRoute>
+            <Learning />
+          </ProtectedRoute>
+        }
+      />
 
-<Route
-  path="/learning/:id"
-  element={
-    <ProtectedRoute>
-      <LearningArticleDetails />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/learning/add"
-  element={
-    <ProtectedRoute>
-      <AddLearningArticle />
-    </ProtectedRoute>
-  }
-/>
+      <Route
+        path="/learning/:id"
+        element={
+          <ProtectedRoute>
+            <LearningArticleDetails />
+          </ProtectedRoute>
+        }
+      />
 
-<Route
-  path="/learning/edit/:id"
-  element={
-    <ProtectedRoute>
-      <EditLearningArticle />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/users"
-  element={
-    <OwnerRoute>
-      <UserManagement />
-    </OwnerRoute>
-  }
-/>
+      <Route
+        path="/learning/add"
+        element={
+          <AdminRoute>
+            <AddLearningArticle />
+          </AdminRoute>
+        }
+      />
 
+      <Route
+        path="/learning/edit/:id"
+        element={
+          <AdminRoute>
+            <EditLearningArticle />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <OwnerRoute>
+            <UserManagement />
+          </OwnerRoute>
+        }
+      />
     </Routes>
   );
 }

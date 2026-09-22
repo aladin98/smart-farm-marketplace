@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { updateEquipment } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { resizeImage } from "../utils/image";
 
 function EditEquipment() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function EditEquipment() {
     condition: equipment?.condition || "New",
     quantity: equipment?.quantity || "",
     notes: equipment?.notes || "",
+    photoUrl: equipment?.photoUrl || "",
   });
 
   if (!equipment) {
@@ -47,17 +49,22 @@ function EditEquipment() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      const resizedPhoto = await resizeImage(file, 1000, 700, 0.8);
 
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
-
-    reader.readAsDataURL(file);
+      setPhotoPreview(resizedPhoto);
+      setFormData((prev) => ({
+        ...prev,
+        photoUrl: resizedPhoto,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
 
   async function handleSubmit(e) {
@@ -72,6 +79,7 @@ function EditEquipment() {
         condition: formData.condition,
         quantity: parseInt(formData.quantity, 10),
         notes: formData.notes,
+        photoUrl: formData.photoUrl,
       });
 
       setMessage(t("equipmentUpdatedSuccessfully"));
