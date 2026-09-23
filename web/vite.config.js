@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/odata': {
-        target: 'https://port4004-workspaces-ws-c97u5.eu10.applicationstudio.cloud.sap',
+        target: 'https://smart-farm-marketplace.onrender.com/odata/v4/marketplace',
         changeOrigin: true,
         secure: true,
       },
