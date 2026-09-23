@@ -12,6 +12,7 @@ cds.on("bootstrap", (app) => {
         "http://localhost:4173",
         "https://port4173-workspaces-ws-c97u5.eu10.applicationstudio.cloud.sap",
         "https://port5173-workspaces-ws-c97u5.eu10.applicationstudio.cloud.sap",
+        "https://smart-farm-marketplaces.vercel.app",
       ],
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "x-user-email"],
