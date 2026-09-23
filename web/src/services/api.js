@@ -3,6 +3,8 @@ import { getCurrentUser } from "./auth";
 const API_BASE =
   import.meta.env.VITE_API_BASE || "/odata/v4/marketplace";
 
+  console.log("API_BASE =", API_BASE);
+  
 function getAuthHeaders(extraHeaders = {}) {
   const currentUser = getCurrentUser();
 
