@@ -15,6 +15,7 @@ function Register() {
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -33,23 +34,28 @@ function Register() {
     async function loadCountries() {
       try {
         const data = await fetchCountries();
-        setCountries(data);
+        setCountries(data || []);
 
-        if (data.length > 0) {
+        if (data?.length > 0) {
           setFormData((prev) => ({
             ...prev,
             country_ID: data[0].ID,
           }));
+        } else {
+          setMessage(t("noCountriesAvailable"));
+          setIsError(true);
         }
       } catch (error) {
         console.error(error);
+        setMessage(t("failedToLoadCountries"));
+        setIsError(true);
       } finally {
         setLoadingCountries(false);
       }
     }
 
     loadCountries();
-  }, []);
+  }, [t]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -60,29 +66,38 @@ function Register() {
   }
 
   async function handlePhotoChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    const resizedImage = await resizeImage(file, 300, 300, 0.7);
+    try {
+      const resizedImage = await resizeImage(file, 300, 300, 0.7);
 
-    setPhotoPreview(resizedImage);
-    setFormData((prev) => ({
-      ...prev,
-      profilePhoto: resizedImage,
-    }));
-  } catch (error) {
-    console.error(error);
-    setMessage(t("failedToProcessImage"));
+      setPhotoPreview(resizedImage);
+      setFormData((prev) => ({
+        ...prev,
+        profilePhoto: resizedImage,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+      setIsError(true);
+    }
   }
-}
 
   async function handleSubmit(e) {
     e.preventDefault();
     setMessage("");
+    setIsError(false);
 
     if (formData.password !== formData.confirmPassword) {
       setMessage(t("passwordsDoNotMatch"));
+      setIsError(true);
+      return;
+    }
+
+    if (!formData.country_ID) {
+      setMessage(t("pleaseSelectCountry"));
+      setIsError(true);
       return;
     }
 
@@ -92,6 +107,7 @@ function Register() {
       await registerUser(formData);
 
       setMessage(t("accountCreatedSuccessfully"));
+      setIsError(false);
 
       setTimeout(() => {
         navigate("/login");
@@ -104,6 +120,8 @@ function Register() {
       } else {
         setMessage(t("failedToCreateAccount"));
       }
+
+      setIsError(true);
     } finally {
       setSubmitting(false);
     }
@@ -252,8 +270,14 @@ function Register() {
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
                   required
-                  disabled={loadingCountries}
+                  disabled={loadingCountries || countries.length === 0}
                 >
+                  <option value="">
+                    {loadingCountries
+                      ? t("loadingCountries")
+                      : t("selectCountry")}
+                  </option>
+
                   {countries.map((country) => (
                     <option key={country.ID} value={country.ID}>
                       {country.name}
@@ -294,14 +318,18 @@ function Register() {
             </div>
 
             {message && (
-              <p className="text-sm font-medium text-center text-green-700">
+              <p
+                className={`text-sm font-medium text-center ${
+                  isError ? "text-red-600" : "text-green-700"
+                }`}
+              >
                 {message}
               </p>
             )}
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || loadingCountries || countries.length === 0}
               className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
             >
               {submitting ? t("creating") : t("createAccount")}

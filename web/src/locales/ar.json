@@ -434,6 +434,9 @@
 "cannotLinkCageToUnsyncedPlace": "لا يمكن ربط هذا القفص بمكان لم تتم مزامنته بعد.",
 "selectPlace": "اختر مكانًا",
 "invalidPrice": "يرجى إدخال سعر صحيح.",
+"selectCountry": "اختر دولة",
+"pleaseSelectCountry": "يرجى اختيار الدولة.",
+"noCountriesAvailable": "لا توجد دول متاحة حالياً.",
 
   "categoriesMap": {
     "All": "الكل",

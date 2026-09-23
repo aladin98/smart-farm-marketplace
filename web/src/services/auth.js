@@ -1,12 +1,21 @@
 import { createUser, loginRequest, fetchCurrentUser } from "./api";
 
 export function getCurrentUser() {
-  const user = localStorage.getItem("currentUser");
-  return user ? JSON.parse(user) : null;
+  try {
+    const user = localStorage.getItem("currentUser");
+    return user ? JSON.parse(user) : null;
+  } catch (error) {
+    console.error("Failed to parse currentUser from localStorage:", error);
+    return null;
+  }
 }
 
 export function setCurrentUser(user) {
-  localStorage.setItem("currentUser", JSON.stringify(user));
+  try {
+    localStorage.setItem("currentUser", JSON.stringify(user));
+  } catch (error) {
+    console.error("Failed to store currentUser in localStorage:", error);
+  }
 }
 
 export function loginUser(user) {
@@ -14,7 +23,11 @@ export function loginUser(user) {
 }
 
 export function logoutUser() {
-  localStorage.removeItem("currentUser");
+  try {
+    localStorage.removeItem("currentUser");
+  } catch (error) {
+    console.error("Failed to remove currentUser from localStorage:", error);
+  }
 }
 
 export function isAuthenticated() {
@@ -23,12 +36,12 @@ export function isAuthenticated() {
 
 export function isOwner() {
   const user = getCurrentUser();
-  return user?.role === "owner";
+  return String(user?.role || "").toLowerCase() === "owner";
 }
 
 export function isAdmin() {
-  const user = getCurrentUser();
-  return user?.role === "admin" || user?.role === "owner";
+  const role = String(getCurrentUser()?.role || "").toLowerCase();
+  return role === "admin" || role === "owner";
 }
 
 export async function authenticateUser(email, password) {
@@ -59,7 +72,10 @@ export async function registerUser(formData) {
   try {
     return await createUser(payload);
   } catch (error) {
-    if (error.message.includes("409") || error.message.includes("Email already exists")) {
+    if (
+      error.message.includes("409") ||
+      error.message.includes("Email already exists")
+    ) {
       throw new Error("EMAIL_ALREADY_EXISTS");
     }
 

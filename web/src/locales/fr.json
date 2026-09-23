@@ -434,6 +434,9 @@
 "cannotLinkCageToUnsyncedPlace": "Cette cage ne peut pas être liée à un emplacement qui n’a pas encore été synchronisé.",
 "selectPlace": "Sélectionnez un emplacement",
 "invalidPrice": "Veuillez saisir un prix valide.",
+"selectCountry": "Sélectionnez un pays",
+"pleaseSelectCountry": "Veuillez sélectionner un pays.",
+"noCountriesAvailable": "Aucun pays n’est disponible pour le moment.",
 
   "categoriesMap": {
     "All": "Tous",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import { getCurrencyByCountry } from "../utils/currency";
@@ -9,6 +9,10 @@ function ProductCard({ product }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const currency = getCurrencyByCountry(product.country?.name);
+
+  useEffect(() => {
+    setImgSrc(product.photoUrl || fallbackImage);
+  }, [product.photoUrl]);
 
   const categoryName = product.category?.name || t("uncategorized");
   const sellerName = product.seller

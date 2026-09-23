@@ -1,6 +1,7 @@
 import { getCurrentUser } from "./auth";
 
-const API_BASE = "/odata/v4/marketplace";
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "/odata/v4/marketplace";
 
 function getAuthHeaders(extraHeaders = {}) {
   const currentUser = getCurrentUser();
@@ -39,15 +40,15 @@ export async function fetchCategories() {
 export async function createProduct(productData) {
   const response = await fetch(`${API_BASE}/Products`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(productData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create product: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -132,15 +133,15 @@ export async function fetchIncubationCyclesByIncubator(incubatorId) {
 export async function createIncubator(incubatorData) {
   const response = await fetch(`${API_BASE}/Incubators`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(incubatorData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create incubator: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create incubator: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -212,15 +213,15 @@ export async function fetchAnimalVariants() {
 export async function createFarmAnimal(animalData) {
   const response = await fetch(`${API_BASE}/FarmAnimals`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(animalData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create farm animal: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create farm animal: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -229,15 +230,15 @@ export async function createFarmAnimal(animalData) {
 export async function updateFarmAnimal(id, animalData) {
   const response = await fetch(`${API_BASE}/FarmAnimals('${id}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(animalData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update farm animal: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update farm animal: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -246,11 +247,14 @@ export async function updateFarmAnimal(id, animalData) {
 export async function deleteFarmAnimal(id) {
   const response = await fetch(`${API_BASE}/FarmAnimals('${id}')`, {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to delete farm animal: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to delete farm animal: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -259,15 +263,15 @@ export async function deleteFarmAnimal(id) {
 export async function createIncubationCycle(cycleData) {
   const response = await fetch(`${API_BASE}/IncubationCycles`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(cycleData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create incubation cycle: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create incubation cycle: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -276,9 +280,7 @@ export async function createIncubationCycle(cycleData) {
 export async function updateIncubationCycle(id, cycleData) {
   const response = await fetch(`${API_BASE}/IncubationCycles('${id}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(cycleData),
   });
 
@@ -295,6 +297,7 @@ export async function updateIncubationCycle(id, cycleData) {
 export async function deleteIncubationCycle(id) {
   const response = await fetch(`${API_BASE}/IncubationCycles('${id}')`, {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -310,15 +313,15 @@ export async function deleteIncubationCycle(id) {
 export async function createPlace(placeData) {
   const response = await fetch(`${API_BASE}/Places`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(placeData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create place: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create place: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -327,15 +330,15 @@ export async function createPlace(placeData) {
 export async function updatePlace(id, placeData) {
   const response = await fetch(`${API_BASE}/Places('${id}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(placeData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update place: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update place: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -344,11 +347,14 @@ export async function updatePlace(id, placeData) {
 export async function deletePlace(id) {
   const response = await fetch(`${API_BASE}/Places('${id}')`, {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to delete place: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to delete place: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -357,15 +363,15 @@ export async function deletePlace(id) {
 export async function createCage(cageData) {
   const response = await fetch(`${API_BASE}/Cages`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(cageData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create cage: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create cage: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -374,15 +380,15 @@ export async function createCage(cageData) {
 export async function updateCage(id, cageData) {
   const response = await fetch(`${API_BASE}/Cages('${id}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(cageData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update cage: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update cage: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -391,11 +397,14 @@ export async function updateCage(id, cageData) {
 export async function deleteCage(id) {
   const response = await fetch(`${API_BASE}/Cages('${id}')`, {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to delete cage: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to delete cage: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -404,15 +413,15 @@ export async function deleteCage(id) {
 export async function createEquipment(equipmentData) {
   const response = await fetch(`${API_BASE}/Equipments`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(equipmentData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create equipment: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create equipment: ${response.status} - ${errorText}`
+    );
   }
 
   return await response.json();
@@ -421,15 +430,15 @@ export async function createEquipment(equipmentData) {
 export async function updateEquipment(id, equipmentData) {
   const response = await fetch(`${API_BASE}/Equipments('${id}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(equipmentData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update equipment: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update equipment: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -438,11 +447,14 @@ export async function updateEquipment(id, equipmentData) {
 export async function deleteEquipment(id) {
   const response = await fetch(`${API_BASE}/Equipments('${id}')`, {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to delete equipment: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to delete equipment: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -475,9 +487,7 @@ export async function fetchLearningArticles() {
 export async function deleteLearningArticle(articleId) {
   const response = await fetch(`${API_BASE}/LearningArticles('${articleId}')`, {
     method: "DELETE",
-    headers: {
-      "x-user-email": getCurrentUser()?.email || "",
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -519,11 +529,15 @@ export async function createLearningArticle(payload) {
 }
 
 export async function fetchUsers() {
-  const response = await fetch(`${API_BASE}/Users?$expand=country`);
+  const response = await fetch(`${API_BASE}/Users?$expand=country`, {
+    headers: getAuthHeaders(),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to fetch users: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to fetch users: ${response.status} - ${errorText}`
+    );
   }
 
   const data = await response.json();
@@ -539,7 +553,9 @@ export async function updateProfile(id, updates) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update profile: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update profile: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -554,7 +570,9 @@ export async function updateUser(id, updates) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update user: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update user: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -563,14 +581,14 @@ export async function updateUser(id, updates) {
 export async function deleteUser(id) {
   const response = await fetch(`${API_BASE}/Users('${id}')`, {
     method: "DELETE",
-    headers: {
-      "x-user-email": getCurrentUser()?.email || "",
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to delete user: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to delete user: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
@@ -587,7 +605,9 @@ export async function createUser(userData) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to create user: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to create user: ${response.status} - ${errorText}`
+    );
   }
 
   return response.json();
@@ -620,37 +640,42 @@ export async function fetchCurrentUser() {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to fetch current user: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to fetch current user: ${response.status} - ${errorText}`
+    );
   }
 
   return response.json();
 }
 
 export async function updateIncubator(id, incubatorData) {
-  const response = await fetch(`/odata/v4/marketplace/Incubators('${id}')`, {
+  const response = await fetch(`${API_BASE}/Incubators('${id}')`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(incubatorData),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to update incubator: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to update incubator: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
 }
 
 export async function deleteIncubator(id) {
-  const response = await fetch(`/odata/v4/marketplace/Incubators('${id}')`, {
+  const response = await fetch(`${API_BASE}/Incubators('${id}')`, {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to delete incubator: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Failed to delete incubator: ${response.status} - ${errorText}`
+    );
   }
 
   return true;
