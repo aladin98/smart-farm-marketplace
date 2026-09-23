@@ -5,7 +5,7 @@
   "dependencies": {
     "@cap-js/sqlite": "^3",
     "@sap/cds": "^10",
-    "@sap/cds-dk": "^8.9.19",
+    "@sap/cds-dk": "^10.1.2",
     "cors": "^2.8.6"
   },
   "devDependencies": {
