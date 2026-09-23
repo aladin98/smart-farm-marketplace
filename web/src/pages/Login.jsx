@@ -74,6 +74,9 @@ function Login() {
             </h1>
             <p className="text-lg text-green-700">{t("marketplace")}</p>
             <p className="text-gray-500 mt-3">{t("welcomeBackLogin")}</p>
+            <p className="text-xs text-gray-400 text-center mt-2">
+  API: {import.meta.env.VITE_API_BASE || "/odata/v4/marketplace"}
+</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
