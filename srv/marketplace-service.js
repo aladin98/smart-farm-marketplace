@@ -22,20 +22,24 @@ export default cds.service.impl(async function () {
   // Auth actions
   // -----------------------------------
   this.on("login", async (req) => {
-    const { email, password } = req.data;
+  const email = req.data.email?.trim().toLowerCase();
+  const password = req.data.password;
 
-    if (!email || !password) {
-      return req.reject(400, "Email and password are required");
-    }
+  if (!email || !password) {
+    return req.reject(400, "Email and password are required");
+  }
 
-    const user = await SELECT.one.from(Users).where({ email });
+  const users = await SELECT.from(Users);
+  const user = users.find(
+    (u) => u.email?.trim().toLowerCase() === email
+  );
 
-    if (!user || user.passwordHash !== password) {
-      return req.reject(401, "Invalid email or password");
-    }
+  if (!user || user.passwordHash !== password) {
+    return req.reject(401, "Invalid email or password");
+  }
 
-    return user;
-  });
+  return user;
+});
 
   this.on("me", async (req) => {
     const email = getRequestEmail(req);

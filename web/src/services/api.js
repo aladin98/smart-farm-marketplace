@@ -619,7 +619,10 @@ export async function loginRequest(email, password) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email: email.trim().toLowerCase(),
+      password,
+    }),
   });
 
   if (!response.ok) {
