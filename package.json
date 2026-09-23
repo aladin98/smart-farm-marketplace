@@ -19,6 +19,9 @@
     "requires": {
       "db": {
         "kind": "sqlite"
+      },
+      "auth": {
+        "kind": "mocked"
       }
     }
   },
