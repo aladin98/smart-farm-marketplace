@@ -625,3 +625,33 @@ export async function fetchCurrentUser() {
 
   return response.json();
 }
+
+export async function updateIncubator(id, incubatorData) {
+  const response = await fetch(`/odata/v4/marketplace/Incubators('${id}')`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(incubatorData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update incubator: ${response.status} - ${errorText}`);
+  }
+
+  return true;
+}
+
+export async function deleteIncubator(id) {
+  const response = await fetch(`/odata/v4/marketplace/Incubators('${id}')`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to delete incubator: ${response.status} - ${errorText}`);
+  }
+
+  return true;
+}

@@ -1,15 +1,25 @@
 import BottomNav from "../components/BottomNav";
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { createIncubationCycle } from "../services/api";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import { getCurrentUser } from "../services/auth";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
 
 function AddIncubationCycle() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const incubator = state?.incubator;
+  const { id } = useParams();
   const { t } = useTranslation();
+  const currentUser = getCurrentUser();
+
+  const incubator = getEntityFromStateOrCache({
+    state,
+    stateKey: "incubator",
+    id,
+    moduleName: "incubators",
+    userId: currentUser?.ID,
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -57,10 +67,18 @@ function AddIncubationCycle() {
     setSubmitting(true);
     setMessage("");
 
+    const parsedEggsCount = parseInt(formData.eggsCount, 10);
+
+    if (Number.isNaN(parsedEggsCount) || parsedEggsCount < 1) {
+      setMessage(t("invalidEggsCount"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const payload = {
         incubator_ID: incubator.ID,
-        eggsCount: parseInt(formData.eggsCount, 10),
+        eggsCount: parsedEggsCount,
         startDate: formData.startDate,
         checkDate: formData.checkDate,
         stopDate: formData.stopDate,
@@ -120,6 +138,7 @@ function AddIncubationCycle() {
               placeholder={t("enterEggsCount")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="1"
             />
           </div>
 

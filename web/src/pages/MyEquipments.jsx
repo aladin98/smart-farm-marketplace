@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { fetchEquipmentsByOwner, deleteEquipment } from "../services/api";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import {
+  loadWithOfflineSupport,
+  addOfflineDelete,
+  setCachedItems,
+} from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const MODULE_NAME = "equipments";
 
 function MyEquipments() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [equipments, setEquipments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,15 +28,32 @@ function MyEquipments() {
 
   useEffect(() => {
     async function loadEquipments() {
-      if (!currentUser) {
+      if (!currentUser?.ID) {
         setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
 
       try {
-        const data = await fetchEquipmentsByOwner(currentUser.ID);
-        setEquipments(data);
+        const result = await loadWithOfflineSupport({
+          moduleName: MODULE_NAME,
+          userId: currentUser.ID,
+          fetchFn: () => config.fetchFn(currentUser.ID),
+          syncConfig: {
+            createFn: config.createFn,
+            updateFn: config.updateFn,
+            deleteFn: config.deleteFn,
+            buildPayload: config.buildPayload,
+          },
+        });
+
+        setEquipments(result.items);
+
+        if (!isOnline && result.empty) {
+          setError(t("noOfflineEquipmentsAvailable"));
+        } else {
+          setError("");
+        }
       } catch (err) {
         console.error(err);
         setError(t("failedToLoadEquipments"));
@@ -37,20 +63,41 @@ function MyEquipments() {
     }
 
     loadEquipments();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline, config]);
 
   async function handleDelete(equipmentId) {
     const confirmed = window.confirm(t("areYouSureDeleteEquipment"));
-    if (!confirmed) return;
+    if (!confirmed || !currentUser?.ID) return;
+
+    const currentEquipment = equipments.find(
+      (equipment) => equipment.ID === equipmentId
+    );
+    if (!currentEquipment) return;
+
+    if (!isOnline) {
+      const updatedCache = addOfflineDelete(
+        MODULE_NAME,
+        currentUser.ID,
+        equipmentId,
+        currentEquipment
+      );
+
+      setEquipments(updatedCache);
+      setError("");
+      return;
+    }
 
     try {
-      await deleteEquipment(equipmentId);
-      setEquipments((prev) =>
-        prev.filter((equipment) => equipment.ID !== equipmentId)
+      await config.deleteFn(equipmentId);
+
+      const updatedEquipments = equipments.filter(
+        (equipment) => equipment.ID !== equipmentId
       );
+      setEquipments(updatedEquipments);
+      setCachedItems(MODULE_NAME, currentUser.ID, updatedEquipments);
     } catch (error) {
       console.error(error);
-      setError(t("failedToDeleteEquipment"));
+      setError(`${t("failedToDeleteEquipment")}: ${error.message}`);
     }
   }
 
@@ -61,6 +108,17 @@ function MyEquipments() {
         subtitle={t("manageEquipments")}
         backTo="/my-farm"
       />
+
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineEquipmentsMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("showingCachedEquipments")}
+          </p>
+        </div>
+      )}
 
       <div className="mb-6">
         <button
@@ -87,7 +145,7 @@ function MyEquipments() {
             >
               <img
                 src={equipment.photoUrl || fallbackImage}
-                alt={equipment.name}
+                alt={equipment.name || t("equipment")}
                 className="h-52 w-full object-cover bg-green-50"
                 onError={(e) => {
                   e.currentTarget.src = fallbackImage;
@@ -95,9 +153,17 @@ function MyEquipments() {
               />
 
               <div className="p-4">
-                <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-2">
-                  {equipment.category || t("equipment")}
-                </span>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1">
+                    {equipment.category || t("equipment")}
+                  </span>
+
+                  {equipment.pendingSync && (
+                    <span className="inline-block bg-orange-100 text-orange-700 text-xs font-medium rounded-full px-3 py-1">
+                      {t("pendingSync")}
+                    </span>
+                  )}
+                </div>
 
                 <h2 className="text-xl font-bold text-gray-900">
                   {equipment.name}

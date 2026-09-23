@@ -2,14 +2,20 @@ import BottomNav from "../components/BottomNav";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { createIncubator } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineCreate } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const MODULE_NAME = "incubators";
 
 function AddIncubator() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -54,23 +60,43 @@ function AddIncubator() {
     setSubmitting(true);
     setMessage("");
 
-    if (!currentUser) {
+    if (!currentUser?.ID) {
       setMessage(t("mustBeLoggedInToAddIncubator"));
       setSubmitting(false);
       return;
     }
 
-    try {
-      const payload = {
-        owner_ID: currentUser.ID,
-        name: formData.name,
-        condition: formData.condition,
-        capacity: parseInt(formData.capacity, 10),
-        notes: formData.notes,
-        photoUrl: formData.photoUrl,
-      };
+    const parsedCapacity = parseInt(formData.capacity, 10);
 
-      await createIncubator(payload);
+    if (Number.isNaN(parsedCapacity) || parsedCapacity < 1) {
+      setMessage(t("invalidCapacity"));
+      setSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      owner_ID: currentUser.ID,
+      name: formData.name,
+      condition: formData.condition,
+      capacity: parsedCapacity,
+      notes: formData.notes,
+      photoUrl: formData.photoUrl,
+    };
+
+    try {
+      if (!isOnline) {
+        addOfflineCreate(MODULE_NAME, currentUser.ID, payload);
+
+        setMessage(t("incubatorSavedOffline"));
+
+        setTimeout(() => {
+          navigate("/my-farm/incubators");
+        }, 1000);
+
+        return;
+      }
+
+      await config.createFn(payload);
 
       setMessage(t("incubatorAddedSuccessfully"));
 
@@ -93,6 +119,17 @@ function AddIncubator() {
       >
         ← {t("back")}
       </button>
+
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineIncubatorsMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("newIncubatorsWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
@@ -179,6 +216,7 @@ function AddIncubator() {
               placeholder={t("enterEggCapacity")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="1"
             />
           </div>
 

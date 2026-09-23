@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, logoutUser, isOwner } from "../services/auth";
+import { getCurrentUser, logoutUser } from "../services/auth";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
@@ -59,7 +59,7 @@ function Profile() {
         <div className="flex flex-col items-center text-center">
           <img
             src={currentUser.profilePhoto || fallbackImage}
-            alt={`${currentUser.firstName} ${currentUser.lastName}`}
+            alt={`${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim()}
             className="w-28 h-28 rounded-full object-cover border-4 border-green-100 shadow-sm"
             onError={(e) => {
               e.currentTarget.src = fallbackImage;

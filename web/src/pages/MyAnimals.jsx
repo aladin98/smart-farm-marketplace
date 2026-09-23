@@ -2,191 +2,83 @@ import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import {
-  fetchFarmAnimalsByOwner,
-  deleteFarmAnimal,
-  createFarmAnimal,
-  updateFarmAnimal,
-} from "../services/api";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import {
+  loadWithOfflineSupport,
+  addOfflineDelete,
+  setCachedItems,
+} from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
 
-const getAnimalsCacheKey = (userId) => `myFarmAnimalsCache_${userId}`;
-const getAnimalsPendingKey = (userId) => `myFarmAnimalsPending_${userId}`;
+const MODULE_NAME = "animals";
 
 function MyAnimals() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
-
-  async function syncPendingAnimals(userId) {
-    const pendingKey = getAnimalsPendingKey(userId);
-    const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
-
-    if (pendingAnimals.length === 0) return;
-
-    const stillPending = [];
-
-    for (const animal of pendingAnimals) {
-      try {
-        const payload = {
-          owner_ID: animal.owner_ID,
-          animalType_ID: animal.animalType_ID,
-          customName: animal.customName,
-          groupNumber: animal.groupNumber,
-          age: animal.age,
-          sourceType: animal.sourceType,
-          quantity: animal.quantity,
-          notes: animal.notes,
-          photoUrl: animal.photoUrl,
-        };
-
-        if (animal.variant_ID) payload.variant_ID = animal.variant_ID;
-        if (animal.place_ID) payload.place_ID = animal.place_ID;
-        if (animal.cage_ID) payload.cage_ID = animal.cage_ID;
-
-        if (animal.syncAction === "delete") {
-          if (!String(animal.ID).startsWith("offline-")) {
-            await deleteFarmAnimal(animal.ID);
-          }
-        } else if (
-          animal.syncAction === "update" &&
-          !String(animal.ID).startsWith("offline-")
-        ) {
-          await updateFarmAnimal(animal.ID, payload);
-        } else {
-          await createFarmAnimal(payload);
-        }
-      } catch (error) {
-        console.error("Failed to sync animal:", error);
-        stillPending.push(animal);
-      }
-    }
-
-    localStorage.setItem(pendingKey, JSON.stringify(stillPending));
-  }
-
-  useEffect(() => {
-    function handleOnline() {
-      setIsOfflineMode(false);
-    }
-
-    function handleOffline() {
-      setIsOfflineMode(true);
-    }
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
 
   useEffect(() => {
     async function loadAnimals() {
-      if (!currentUser) {
+      if (!currentUser?.ID) {
         setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
 
-      const cacheKey = getAnimalsCacheKey(currentUser.ID);
-
-      if (!navigator.onLine) {
-        try {
-          const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-          setAnimals(cachedAnimals);
-
-          if (cachedAnimals.length === 0) {
-            setError(t("noOfflineAnimalsAvailable"));
-          }
-        } catch (err) {
-          console.error(err);
-          setError(t("failedToLoadAnimals"));
-        } finally {
-          setLoading(false);
-        }
-
-        return;
-      }
-
       try {
-        await syncPendingAnimals(currentUser.ID);
+        const result = await loadWithOfflineSupport({
+          moduleName: MODULE_NAME,
+          userId: currentUser.ID,
+          fetchFn: () => config.fetchFn(currentUser.ID),
+          syncConfig: {
+            createFn: config.createFn,
+            updateFn: config.updateFn,
+            deleteFn: config.deleteFn,
+            buildPayload: config.buildPayload,
+          },
+        });
 
-        const data = await fetchFarmAnimalsByOwner(currentUser.ID);
-        setAnimals(data);
-        localStorage.setItem(cacheKey, JSON.stringify(data));
-        setError("");
+        setAnimals(result.items);
+
+        if (!isOnline && result.empty) {
+          setError(t("noOfflineAnimalsAvailable"));
+        } else {
+          setError("");
+        }
       } catch (err) {
         console.error(err);
-
-        try {
-          const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-
-          if (cachedAnimals.length > 0) {
-            setAnimals(cachedAnimals);
-            setIsOfflineMode(true);
-          } else {
-            setError(t("failedToLoadAnimals"));
-          }
-        } catch {
-          setError(t("failedToLoadAnimals"));
-        }
+        setError(t("failedToLoadAnimals"));
       } finally {
         setLoading(false);
       }
     }
 
     loadAnimals();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline, config]);
 
   async function handleDelete(animalId) {
     const confirmed = window.confirm(t("areYouSureDeleteAnimal"));
-    if (!confirmed) return;
-
-    if (!currentUser?.ID) return;
-
-    const cacheKey = getAnimalsCacheKey(currentUser.ID);
-    const pendingKey = getAnimalsPendingKey(currentUser.ID);
+    if (!confirmed || !currentUser?.ID) return;
 
     const currentAnimal = animals.find((animal) => animal.ID === animalId);
     if (!currentAnimal) return;
 
-    if (!navigator.onLine) {
-      const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-      const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
-
-      const updatedCache = cachedAnimals.filter((animal) => animal.ID !== animalId);
-
-      let updatedPending;
-
-      if (String(animalId).startsWith("offline-")) {
-        // If it was created offline and not synced yet, remove it completely
-        updatedPending = pendingAnimals.filter((animal) => animal.ID !== animalId);
-      } else {
-        // If it exists on backend, mark delete pending
-        const withoutSame = pendingAnimals.filter((animal) => animal.ID !== animalId);
-
-        updatedPending = [
-          {
-            ...currentAnimal,
-            pendingSync: true,
-            syncAction: "delete",
-          },
-          ...withoutSame,
-        ];
-      }
-
-      localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
-      localStorage.setItem(pendingKey, JSON.stringify(updatedPending));
+    if (!isOnline) {
+      const updatedCache = addOfflineDelete(
+        MODULE_NAME,
+        currentUser.ID,
+        animalId,
+        currentAnimal
+      );
 
       setAnimals(updatedCache);
       setError("");
@@ -194,15 +86,14 @@ function MyAnimals() {
     }
 
     try {
-      await deleteFarmAnimal(animalId);
+      await config.deleteFn(animalId);
 
       const updatedAnimals = animals.filter((animal) => animal.ID !== animalId);
       setAnimals(updatedAnimals);
-
-      localStorage.setItem(cacheKey, JSON.stringify(updatedAnimals));
+      setCachedItems(MODULE_NAME, currentUser.ID, updatedAnimals);
     } catch (error) {
       console.error(error);
-      setError(t("failedToDeleteAnimal"));
+      setError(`${t("failedToDeleteAnimal")}: ${error.message}`);
     }
   }
 
@@ -214,7 +105,7 @@ function MyAnimals() {
         backTo="/my-farm"
       />
 
-      {isOfflineMode && (
+      {!isOnline && (
         <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
           <p className="text-orange-700 font-semibold">
             {t("offlineAnimalsMode")}
@@ -250,7 +141,12 @@ function MyAnimals() {
             >
               <img
                 src={animal.photoUrl || fallbackImage}
-                alt={animal.customName || animal.animalType?.name}
+                alt={
+                  animal.customName ||
+                  animal.variant?.name ||
+                  animal.animalType?.name ||
+                  t("unnamedAnimal")
+                }
                 className="h-52 w-full object-cover bg-green-50"
                 onError={(e) => {
                   e.currentTarget.src = fallbackImage;
@@ -275,11 +171,13 @@ function MyAnimals() {
                 </h2>
 
                 <p className="text-sm text-gray-600 mt-2">
-                  <strong>{t("variant")}:</strong> {animal.variant?.name || t("notAvailable")}
+                  <strong>{t("variant")}:</strong>{" "}
+                  {animal.variant?.name || t("notAvailable")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>{t("groupNumber")}:</strong> {animal.groupNumber || t("notAvailable")}
+                  <strong>{t("groupNumber")}:</strong>{" "}
+                  {animal.groupNumber || t("notAvailable")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
@@ -287,15 +185,18 @@ function MyAnimals() {
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>{t("source")}:</strong> {animal.sourceType || t("notAvailable")}
+                  <strong>{t("source")}:</strong>{" "}
+                  {animal.sourceType || t("notAvailable")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>{t("place")}:</strong> {animal.place?.name || t("notAvailable")}
+                  <strong>{t("place")}:</strong>{" "}
+                  {animal.place?.name || t("notAvailable")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">
-                  <strong>{t("cage")}:</strong> {animal.cage?.cageNumber || t("notAvailable")}
+                  <strong>{t("cage")}:</strong>{" "}
+                  {animal.cage?.cageNumber || t("notAvailable")}
                 </p>
 
                 <p className="text-sm text-gray-600 mt-1">

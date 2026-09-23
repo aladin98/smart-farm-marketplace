@@ -1,16 +1,27 @@
 import BottomNav from "../components/BottomNav";
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { updateIncubationCycle } from "../services/api";
 import { useTranslation } from "react-i18next";
+import { getCurrentUser } from "../services/auth";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
 
 function EditIncubationCycle() {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { id, cycleId } = useParams();
   const { t } = useTranslation();
+  const currentUser = getCurrentUser();
 
-  const cycle = state?.cycle;
-  const incubator = state?.incubator;
+  const incubator = getEntityFromStateOrCache({
+    state,
+    stateKey: "incubator",
+    id,
+    moduleName: "incubators",
+    userId: currentUser?.ID,
+  });
+
+  const cycle = state?.cycle || null;
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -25,7 +36,7 @@ function EditIncubationCycle() {
     notes: cycle?.notes || "",
   });
 
-  if (!cycle || !incubator) {
+  if (!cycle || !incubator || String(cycle.ID) !== String(cycleId)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4 pb-24">
         <div className="bg-white rounded-[28px] shadow-sm p-6 text-center max-w-md w-full">
@@ -58,9 +69,17 @@ function EditIncubationCycle() {
     setSubmitting(true);
     setMessage("");
 
+    const parsedEggsCount = parseInt(formData.eggsCount, 10);
+
+    if (Number.isNaN(parsedEggsCount) || parsedEggsCount < 1) {
+      setMessage(t("invalidEggsCount"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
       await updateIncubationCycle(cycle.ID, {
-        eggsCount: parseInt(formData.eggsCount, 10),
+        eggsCount: parsedEggsCount,
         startDate: formData.startDate,
         checkDate: formData.checkDate,
         stopDate: formData.stopDate,
@@ -117,6 +136,7 @@ function EditIncubationCycle() {
               onChange={handleChange}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="1"
             />
           </div>
 

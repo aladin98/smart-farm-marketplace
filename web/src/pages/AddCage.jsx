@@ -2,14 +2,20 @@ import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { createCage, fetchPlacesByOwner } from "../services/api";
+import { fetchPlacesByOwner } from "../services/api";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineCreate, getCachedItems } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const MODULE_NAME = "cages";
 
 function AddCage() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [places, setPlaces] = useState([]);
   const [loadingPlaces, setLoadingPlaces] = useState(true);
@@ -25,17 +31,29 @@ function AddCage() {
 
   useEffect(() => {
     async function loadPlaces() {
-      if (!currentUser) return;
+      if (!currentUser?.ID) {
+        setLoadingPlaces(false);
+        return;
+      }
 
       try {
-        const data = await fetchPlacesByOwner(currentUser.ID);
+        let data = [];
+
+        if (isOnline) {
+          data = await fetchPlacesByOwner(currentUser.ID);
+        } else {
+          data = getCachedItems("places", currentUser.ID);
+        }
+
         setPlaces(data);
 
         if (data.length > 0) {
           setFormData((prev) => ({
             ...prev,
-            place_ID: data[0].ID,
+            place_ID: prev.place_ID || data[0].ID,
           }));
+        } else if (!isOnline) {
+          setMessage(t("noOfflinePlacesAvailable"));
         }
       } catch (error) {
         console.error(error);
@@ -46,7 +64,7 @@ function AddCage() {
     }
 
     loadPlaces();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -61,8 +79,16 @@ function AddCage() {
     setSubmitting(true);
     setMessage("");
 
-    if (!currentUser) {
+    if (!currentUser?.ID) {
       setMessage(t("mustBeLoggedInToAddCage"));
+      setSubmitting(false);
+      return;
+    }
+
+    const parsedCapacity = parseInt(formData.capacity, 10);
+
+    if (Number.isNaN(parsedCapacity) || parsedCapacity < 1) {
+      setMessage(t("invalidCapacity"));
       setSubmitting(false);
       return;
     }
@@ -72,11 +98,36 @@ function AddCage() {
         owner_ID: currentUser.ID,
         place_ID: formData.place_ID,
         cageNumber: formData.cageNumber,
-        capacity: parseInt(formData.capacity, 10),
+        capacity: parsedCapacity,
         notes: formData.notes,
       };
 
-      await createCage(payload);
+      if (!isOnline) {
+        const selectedPlace = places.find(
+          (place) => place.ID === formData.place_ID
+        );
+
+        if (selectedPlace?.ID?.startsWith?.("offline-")) {
+          setMessage(t("cannotLinkCageToUnsyncedPlace"));
+          setSubmitting(false);
+          return;
+        }
+
+        addOfflineCreate(MODULE_NAME, currentUser.ID, {
+          ...payload,
+          place: selectedPlace || null,
+        });
+
+        setMessage(t("cageSavedOffline"));
+
+        setTimeout(() => {
+          navigate("/my-farm/cages");
+        }, 1000);
+
+        return;
+      }
+
+      await config.createFn(payload);
 
       setMessage(t("cageAddedSuccessfully"));
 
@@ -100,13 +151,22 @@ function AddCage() {
         ← {t("back")}
       </button>
 
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineCagesMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("newCagesWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("addCage")}
         </h1>
-        <p className="text-gray-600 mb-6">
-          {t("addCageSubtitle")}
-        </p>
+        <p className="text-gray-600 mb-6">{t("addCageSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -121,6 +181,7 @@ function AddCage() {
               disabled={loadingPlaces}
               required
             >
+              <option value="">{t("selectPlace")}</option>
               {places.map((place) => (
                 <option key={place.ID} value={place.ID}>
                   {place.name} ({place.placeNumber})
@@ -156,6 +217,7 @@ function AddCage() {
               placeholder={t("enterCageCapacity")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="1"
             />
           </div>
 
@@ -181,7 +243,7 @@ function AddCage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || loadingPlaces}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
           >
             {submitting ? t("adding") : t("addCage")}

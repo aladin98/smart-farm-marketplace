@@ -1,24 +1,36 @@
 import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   fetchPlacesByOwner,
   fetchCagesByOwner,
-  updateFarmAnimal,
 } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineUpdate, getCachedItems } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
 
-const getAnimalsCacheKey = (userId) => `myFarmAnimalsCache_${userId}`;
-const getAnimalsPendingKey = (userId) => `myFarmAnimalsPending_${userId}`;
+const MODULE_NAME = "animals";
 
 function EditAnimal() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const animal = state?.animal;
+  const { id } = useParams();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
+
+  const animal = getEntityFromStateOrCache({
+    state,
+    stateKey: "animal",
+    id,
+    moduleName: MODULE_NAME,
+    userId: currentUser?.ID,
+  });
 
   const [places, setPlaces] = useState([]);
   const [cages, setCages] = useState([]);
@@ -42,28 +54,49 @@ function EditAnimal() {
   });
 
   useEffect(() => {
-    async function loadData() {
-      if (!currentUser || !animal) {
-        setLoading(false);
-        return;
-      }
+    if (!animal) return;
 
-      if (!navigator.onLine) {
+    setPhotoPreview(animal.photoUrl || "");
+    setFormData({
+      place_ID: animal.place_ID || "",
+      cage_ID: animal.cage_ID || "",
+      customName: animal.customName || "",
+      groupNumber: animal.groupNumber || "",
+      age: animal.age || "",
+      sourceType: animal.sourceType || "Hatched",
+      quantity: animal.quantity || "",
+      notes: animal.notes || "",
+      photoUrl: animal.photoUrl || "",
+    });
+  }, [animal]);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!currentUser?.ID || !animal) {
         setLoading(false);
         return;
       }
 
       try {
-        const [userPlaces, userCages] = await Promise.all([
-          fetchPlacesByOwner(currentUser.ID),
-          fetchCagesByOwner(currentUser.ID),
-        ]);
+        let userPlaces = [];
+        let userCages = [];
+
+        if (isOnline) {
+          [userPlaces, userCages] = await Promise.all([
+            fetchPlacesByOwner(currentUser.ID),
+            fetchCagesByOwner(currentUser.ID),
+          ]);
+        } else {
+          userPlaces = getCachedItems("places", currentUser.ID);
+          userCages = getCachedItems("cages", currentUser.ID);
+        }
 
         setPlaces(userPlaces);
         setCages(userCages);
 
+        const selectedPlaceId = animal.place_ID || formData.place_ID || "";
         const cagesForPlace = userCages.filter(
-          (cage) => cage.place_ID === (animal?.place_ID || "")
+          (cage) => cage.place_ID === selectedPlaceId
         );
 
         setFilteredCages(cagesForPlace);
@@ -76,7 +109,7 @@ function EditAnimal() {
     }
 
     loadData();
-  }, [currentUser, animal, t]);
+  }, [currentUser, animal, t, isOnline]);
 
   if (!animal) {
     return (
@@ -157,40 +190,27 @@ function EditAnimal() {
     };
 
     try {
-      if (!navigator.onLine && currentUser?.ID) {
-        const cacheKey = getAnimalsCacheKey(currentUser.ID);
-        const pendingKey = getAnimalsPendingKey(currentUser.ID);
+      if (!isOnline && currentUser?.ID) {
+        const selectedPlace = places.find((place) => place.ID === payload.place_ID);
+        const selectedCage = cages.find((cage) => cage.ID === payload.cage_ID);
 
-        const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-        const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
-
-        const updatedAnimal = {
-          ...animal,
-          ...payload,
-          pendingSync: true,
-          syncAction: animal.syncAction === "create" ? "create" : "update",
-          place:
-            places.find((place) => place.ID === payload.place_ID) || animal.place || null,
-          cage:
-            cages.find((cage) => cage.ID === payload.cage_ID) || animal.cage || null,
-        };
-
-        const updatedCache = cachedAnimals.map((item) =>
-          item.ID === animal.ID ? updatedAnimal : item
-        );
-
-        const existingPendingIndex = pendingAnimals.findIndex((item) => item.ID === animal.ID);
-
-        let updatedPending;
-        if (existingPendingIndex >= 0) {
-          updatedPending = [...pendingAnimals];
-          updatedPending[existingPendingIndex] = updatedAnimal;
-        } else {
-          updatedPending = [updatedAnimal, ...pendingAnimals];
+        if (selectedPlace?.ID?.startsWith?.("offline-")) {
+          setMessage(t("cannotLinkAnimalToUnsyncedPlace"));
+          setSubmitting(false);
+          return;
         }
 
-        localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
-        localStorage.setItem(pendingKey, JSON.stringify(updatedPending));
+        if (selectedCage?.ID?.startsWith?.("offline-")) {
+          setMessage(t("cannotLinkAnimalToUnsyncedCage"));
+          setSubmitting(false);
+          return;
+        }
+
+        addOfflineUpdate(MODULE_NAME, currentUser.ID, animal, {
+          ...payload,
+          place: selectedPlace || null,
+          cage: selectedCage || null,
+        });
 
         setMessage(t("animalUpdatedOffline"));
 
@@ -214,7 +234,7 @@ function EditAnimal() {
       if (formData.place_ID) onlinePayload.place_ID = formData.place_ID;
       if (formData.cage_ID) onlinePayload.cage_ID = formData.cage_ID;
 
-      await updateFarmAnimal(animal.ID, onlinePayload);
+      await config.updateFn(animal.ID, onlinePayload);
 
       setMessage(t("animalUpdatedSuccessfully"));
 
@@ -238,7 +258,7 @@ function EditAnimal() {
         ← {t("back")}
       </button>
 
-      {!navigator.onLine && (
+      {!isOnline && (
         <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
           <p className="text-orange-700 font-semibold">
             {t("offlineAnimalsMode")}
@@ -402,6 +422,7 @@ function EditAnimal() {
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
                 required
+                min="1"
               />
             </div>
 

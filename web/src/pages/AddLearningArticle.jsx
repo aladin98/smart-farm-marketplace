@@ -1,16 +1,24 @@
 import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchLearningCategories, createLearningArticle } from "../services/api";
+import { fetchLearningCategories } from "../services/api";
 import { getCurrentUser, isAdmin } from "../services/auth";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
 import fallbackImage from "../assets/images/fallback-product.jpg";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineCreate } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const LEARNING_CATEGORIES_CACHE_KEY = "learningCategoriesCache";
+const MODULE_NAME = "learning";
+const GLOBAL_SCOPE = "global";
 
 function AddLearningArticle() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
 
   const canManageLearning = isAdmin();
 
@@ -25,31 +33,75 @@ function AddLearningArticle() {
     summary: "",
     content: "",
     imageUrl: "",
-    category_ID: ""
+    category_ID: "",
   });
 
   useEffect(() => {
     async function loadCategories() {
       try {
+        if (!isOnline) {
+          const cachedCategories = JSON.parse(
+            localStorage.getItem(LEARNING_CATEGORIES_CACHE_KEY) || "[]"
+          );
+
+          setCategories(cachedCategories);
+
+          if (cachedCategories.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              category_ID: prev.category_ID || cachedCategories[0].ID,
+            }));
+          }
+
+          if (cachedCategories.length === 0) {
+            setMessage(t("noOfflineLearningCategories"));
+          }
+
+          return;
+        }
+
         const data = await fetchLearningCategories();
         setCategories(data);
+
+        localStorage.setItem(
+          LEARNING_CATEGORIES_CACHE_KEY,
+          JSON.stringify(data)
+        );
 
         if (data.length > 0) {
           setFormData((prev) => ({
             ...prev,
-            category_ID: data[0].ID
+            category_ID: data[0].ID,
           }));
         }
       } catch (error) {
         console.error(error);
-        setMessage(t("failedToLoadLearningCategories"));
+
+        try {
+          const cachedCategories = JSON.parse(
+            localStorage.getItem(LEARNING_CATEGORIES_CACHE_KEY) || "[]"
+          );
+
+          setCategories(cachedCategories);
+
+          if (cachedCategories.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              category_ID: prev.category_ID || cachedCategories[0].ID,
+            }));
+          } else {
+            setMessage(t("failedToLoadLearningCategories"));
+          }
+        } catch {
+          setMessage(t("failedToLoadLearningCategories"));
+        }
       } finally {
         setLoadingCategories(false);
       }
     }
 
     loadCategories();
-  }, [t]);
+  }, [t, isOnline]);
 
   if (!currentUser || !canManageLearning) {
     return (
@@ -79,7 +131,7 @@ function AddLearningArticle() {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     if (name === "imageUrl") {
@@ -97,7 +149,7 @@ function AddLearningArticle() {
       setImagePreview(resizedImage);
       setFormData((prev) => ({
         ...prev,
-        imageUrl: resizedImage
+        imageUrl: resizedImage,
       }));
     } catch (error) {
       console.error(error);
@@ -116,10 +168,31 @@ function AddLearningArticle() {
         summary: formData.summary,
         content: formData.content,
         imageUrl: formData.imageUrl,
-        category_ID: formData.category_ID
+        category_ID: formData.category_ID,
       };
 
-      await createLearningArticle(payload);
+      const config = offlineModules[MODULE_NAME];
+
+      if (!isOnline) {
+        const selectedCategory =
+          categories.find((category) => category.ID === formData.category_ID) ||
+          null;
+
+        addOfflineCreate(MODULE_NAME, GLOBAL_SCOPE, {
+          ...payload,
+          category: selectedCategory,
+        });
+
+        setMessage(t("articleSavedOffline"));
+
+        setTimeout(() => {
+          navigate("/learning");
+        }, 1000);
+
+        return;
+      }
+
+      await config.createFn(payload);
 
       setMessage(t("articleAddedSuccessfully"));
 
@@ -142,6 +215,17 @@ function AddLearningArticle() {
       >
         ← {t("back")}
       </button>
+
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineLearningMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("newArticlesWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
@@ -225,14 +309,14 @@ function AddLearningArticle() {
             <input
               type="text"
               name="imageUrl"
-              value={formData.imageUrl.startsWith("data:image") ? "" : formData.imageUrl}
+              value={
+                formData.imageUrl.startsWith("data:image") ? "" : formData.imageUrl
+              }
               onChange={handleChange}
               placeholder={t("enterImageUrl")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              {t("orUploadImage")}
-            </p>
+            <p className="text-xs text-gray-500 mt-1">{t("orUploadImage")}</p>
           </div>
 
           <div>
@@ -261,7 +345,7 @@ function AddLearningArticle() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || loadingCategories}
             className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
           >
             {submitting ? t("adding") : t("addArticle")}

@@ -1,17 +1,32 @@
 import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { fetchPlacesByOwner, updateCage } from "../services/api";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { fetchPlacesByOwner } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineUpdate, getCachedItems } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
+
+const MODULE_NAME = "cages";
 
 function EditCage() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const cage = state?.cage;
+  const { id } = useParams();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
+
+  const cage = getEntityFromStateOrCache({
+    state,
+    stateKey: "cage",
+    id,
+    moduleName: MODULE_NAME,
+    userId: currentUser?.ID,
+  });
 
   const [places, setPlaces] = useState([]);
   const [formData, setFormData] = useState({
@@ -25,11 +40,29 @@ function EditCage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    if (!cage) return;
+
+    setFormData({
+      place_ID: cage.place_ID || "",
+      cageNumber: cage.cageNumber || "",
+      capacity: cage.capacity || "",
+      notes: cage.notes || "",
+    });
+  }, [cage]);
+
+  useEffect(() => {
     async function loadPlaces() {
-      if (!currentUser) return;
+      if (!currentUser?.ID) return;
 
       try {
-        const data = await fetchPlacesByOwner(currentUser.ID);
+        let data = [];
+
+        if (isOnline) {
+          data = await fetchPlacesByOwner(currentUser.ID);
+        } else {
+          data = getCachedItems("places", currentUser.ID);
+        }
+
         setPlaces(data);
       } catch (error) {
         console.error(error);
@@ -38,7 +71,7 @@ function EditCage() {
     }
 
     loadPlaces();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline]);
 
   if (!cage) {
     return (
@@ -70,11 +103,47 @@ function EditCage() {
     setSubmitting(true);
     setMessage("");
 
+    const parsedCapacity = parseInt(formData.capacity, 10);
+
+    if (Number.isNaN(parsedCapacity) || parsedCapacity < 1) {
+      setMessage(t("invalidCapacity"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await updateCage(cage.ID, {
+      if (!isOnline && currentUser?.ID) {
+        const selectedPlace = places.find(
+          (place) => place.ID === formData.place_ID
+        );
+
+        if (selectedPlace?.ID?.startsWith?.("offline-")) {
+          setMessage(t("cannotLinkCageToUnsyncedPlace"));
+          setSubmitting(false);
+          return;
+        }
+
+        addOfflineUpdate(MODULE_NAME, currentUser.ID, cage, {
+          place_ID: formData.place_ID,
+          cageNumber: formData.cageNumber,
+          capacity: parsedCapacity,
+          notes: formData.notes,
+          place: selectedPlace || cage.place || null,
+        });
+
+        setMessage(t("cageUpdatedOffline"));
+
+        setTimeout(() => {
+          navigate("/my-farm/cages");
+        }, 1000);
+
+        return;
+      }
+
+      await config.updateFn(cage.ID, {
         place_ID: formData.place_ID,
         cageNumber: formData.cageNumber,
-        capacity: parseInt(formData.capacity, 10),
+        capacity: parsedCapacity,
         notes: formData.notes,
       });
 
@@ -100,6 +169,17 @@ function EditCage() {
         ← {t("back")}
       </button>
 
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineCagesMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("cageUpdatesWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("editCage")}
@@ -117,6 +197,7 @@ function EditCage() {
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             >
+              <option value="">{t("selectPlace")}</option>
               {places.map((place) => (
                 <option key={place.ID} value={place.ID}>
                   {place.name} ({place.placeNumber})
@@ -150,6 +231,7 @@ function EditCage() {
               onChange={handleChange}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="1"
             />
           </div>
 

@@ -30,14 +30,14 @@ function UserManagement() {
       }
     }
 
-    if (isOwner) {
+    if (owner) {
       loadUsers();
     } else {
       setLoading(false);
     }
-  }, [isOwner, t]);
+  }, [owner, t]);
 
-  if (!isOwner) {
+  if (!owner) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4 pb-24">
         <div className="bg-white rounded-[28px] shadow-sm p-6 text-center max-w-md w-full">
@@ -126,19 +126,19 @@ function UserManagement() {
 
                 <div className="flex flex-col gap-3 sm:min-w-[180px]">
                   <select
-  value={user.role || "user"}
-  onChange={(e) => handleRoleChange(user.ID, e.target.value)}
-  className="rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
-  disabled={user.ID === currentUser.ID}
->
-  <option value="user">{t("userRole")}</option>
-  <option value="admin">{t("adminRole")}</option>
-  <option value="owner">{t("ownerRole")}</option>
-</select>
+                    value={user.role || "user"}
+                    onChange={(e) => handleRoleChange(user.ID, e.target.value)}
+                    className="rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
+                    disabled={user.ID === currentUser?.ID}
+                  >
+                    <option value="user">{t("userRole")}</option>
+                    <option value="admin">{t("adminRole")}</option>
+                    <option value="owner">{t("ownerRole")}</option>
+                  </select>
 
                   <button
                     onClick={() => handleDeleteUser(user.ID)}
-                    disabled={user.ID === currentUser.ID}
+                    disabled={user.ID === currentUser?.ID}
                     className="bg-red-50 text-red-600 py-3 rounded-full font-semibold border border-red-100 disabled:opacity-50"
                   >
                     {t("delete")}

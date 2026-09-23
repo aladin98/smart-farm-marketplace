@@ -1,9 +1,7 @@
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchUsers } from "../services/api";
 import { useTranslation } from "react-i18next";
-import { loginUser } from "../services/auth";
 import { authenticateUser, refreshCurrentUser } from "../services/auth";
 
 function Login() {
@@ -17,6 +15,7 @@ function Login() {
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -27,35 +26,39 @@ function Login() {
   }
 
   async function handleLogin(e) {
-  e.preventDefault();
-  setSubmitting(true);
-  setMessage("");
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    setIsError(false);
 
-  try {
-    const matchedUser = await authenticateUser(
-      formData.email,
-      formData.password
-    );
+    try {
+      const matchedUser = await authenticateUser(
+        formData.email,
+        formData.password
+      );
 
-    if (!matchedUser) {
-      setMessage(t("invalidEmailOrPassword"));
-      return;
+      if (!matchedUser) {
+        setMessage(t("invalidEmailOrPassword"));
+        setIsError(true);
+        return;
+      }
+
+      await refreshCurrentUser();
+
+      setMessage(t("loginSuccess"));
+      setIsError(false);
+
+      setTimeout(() => {
+        navigate("/");
+      }, 800);
+    } catch (error) {
+      console.error(error);
+      setMessage(t("loginFailed"));
+      setIsError(true);
+    } finally {
+      setSubmitting(false);
     }
-
-    await refreshCurrentUser();
-
-    setMessage(t("loginSuccess"));
-
-    setTimeout(() => {
-      navigate("/");
-    }, 800);
-  } catch (error) {
-    console.error(error);
-    setMessage(t("loginFailed"));
-  } finally {
-    setSubmitting(false);
   }
-}
 
   return (
     <div className="min-h-screen bg-[#f7f8f2] flex items-center justify-center px-4">
@@ -66,11 +69,11 @@ function Login() {
 
         <div className="bg-white rounded-[28px] shadow-sm p-6">
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-green-900">{t("appName")}</h1>
+            <h1 className="text-4xl font-bold text-green-900">
+              {t("appName")}
+            </h1>
             <p className="text-lg text-green-700">{t("marketplace")}</p>
-            <p className="text-gray-500 mt-3">
-              {t("welcomeBackLogin")}
-            </p>
+            <p className="text-gray-500 mt-3">{t("welcomeBackLogin")}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -114,7 +117,11 @@ function Login() {
             </div>
 
             {message && (
-              <p className="text-sm font-medium text-center text-green-700">
+              <p
+                className={`text-sm font-medium text-center ${
+                  isError ? "text-red-600" : "text-green-700"
+                }`}
+              >
                 {message}
               </p>
             )}

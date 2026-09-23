@@ -88,6 +88,14 @@ function SellProduct() {
       return;
     }
 
+    const parsedPrice = parseFloat(formData.price);
+
+    if (Number.isNaN(parsedPrice) || parsedPrice <= 0) {
+      setMessage(t("invalidPrice"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const payload = {
         name: formData.name,
@@ -97,7 +105,7 @@ function SellProduct() {
         deliveryAvailable: formData.deliveryAvailable,
         condition: "New",
         isNegotiable: false,
-        price: parseFloat(formData.price),
+        price: parsedPrice,
         phoneNumber: formData.phoneNumber,
         city: formData.city,
         status: "Available",
@@ -115,7 +123,7 @@ function SellProduct() {
       }, 1000);
     } catch (error) {
       console.error(error);
-      setMessage(t("productPublishFailed"));
+      setMessage(`${t("productPublishFailed")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -255,6 +263,8 @@ function SellProduct() {
               placeholder={t("enterPrice")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="0.01"
+              step="0.01"
             />
           </div>
 

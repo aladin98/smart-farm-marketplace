@@ -1,18 +1,25 @@
 import BottomNav from "../components/BottomNav";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import { useTranslation } from "react-i18next";
-import { getCurrentUser, isAdmin } from "../services/auth";
+import { isAdmin } from "../services/auth";
 import { deleteLearningArticle } from "../services/api";
-import { resizeImage } from "../utils/image";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
 
 function LearningArticleDetails() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const article = state?.article;
+  const { id } = useParams();
   const { t } = useTranslation();
-  const currentUser = getCurrentUser();
   const canManageLearning = isAdmin();
+
+  const article = getEntityFromStateOrCache({
+    state,
+    stateKey: "article",
+    id,
+    moduleName: "learning",
+    userId: "global",
+  });
 
   async function handleDelete() {
     if (!article) return;
@@ -71,7 +78,10 @@ function LearningArticleDetails() {
         <div className="p-6">
           <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-3">
             {article.category?.name
-              ? t(`learningCategory.${article.category.name}`, article.category.name)
+              ? t(
+                  `learningCategory.${article.category.name}`,
+                  article.category.name
+                )
               : t("learning")}
           </span>
 
@@ -88,7 +98,7 @@ function LearningArticleDetails() {
               <button
                 onClick={() =>
                   navigate(`/learning/edit/${article.ID}`, {
-                    state: { article }
+                    state: { article },
                   })
                 }
                 className="w-full sm:w-auto bg-green-700 text-white py-3 px-6 rounded-full font-semibold"

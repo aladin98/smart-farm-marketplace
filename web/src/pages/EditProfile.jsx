@@ -15,7 +15,9 @@ function EditProfile() {
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [photoPreview, setPhotoPreview] = useState(currentUser?.profilePhoto || "");
+  const [photoPreview, setPhotoPreview] = useState(
+    currentUser?.profilePhoto || ""
+  );
 
   const [formData, setFormData] = useState({
     firstName: currentUser?.firstName || "",
@@ -72,22 +74,22 @@ function EditProfile() {
   }
 
   async function handlePhotoChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    const resizedImage = await resizeImage(file, 300, 300, 0.7);
+    try {
+      const resizedImage = await resizeImage(file, 300, 300, 0.7);
 
-    setPhotoPreview(resizedImage);
-    setFormData((prev) => ({
-      ...prev,
-      profilePhoto: resizedImage,
-    }));
-  } catch (error) {
-    console.error(error);
-    setMessage(t("failedToProcessImage"));
+      setPhotoPreview(resizedImage);
+      setFormData((prev) => ({
+        ...prev,
+        profilePhoto: resizedImage,
+      }));
+    } catch (error) {
+      console.error(error);
+      setMessage(t("failedToProcessImage"));
+    }
   }
-}
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -106,15 +108,13 @@ function EditProfile() {
       };
 
       await updateProfile(currentUser.ID, payload);
+      await refreshCurrentUser();
 
-await refreshCurrentUser();
+      setMessage(t("profileUpdatedSuccessfully"));
 
-setMessage(t("profileUpdatedSuccessfully"));
-
-setTimeout(() => {
-  navigate("/profile");
-}, 1000);
-
+      setTimeout(() => {
+        navigate("/profile");
+      }, 1000);
     } catch (error) {
       console.error(error);
       setMessage(`${t("failedToUpdateProfile")}: ${error.message}`);
@@ -136,9 +136,7 @@ setTimeout(() => {
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("editProfile")}
         </h1>
-        <p className="text-gray-600 mb-6">
-          {t("updatePersonalInformation")}
-        </p>
+        <p className="text-gray-600 mb-6">{t("updatePersonalInformation")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col items-center gap-3">

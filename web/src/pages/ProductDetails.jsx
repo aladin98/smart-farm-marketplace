@@ -3,7 +3,6 @@ import fallbackImage from "../assets/images/fallback-product.jpg";
 import { getCurrencyByCountry } from "../utils/currency";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
 
 function ProductDetails() {
   const { state } = useLocation();
@@ -66,9 +65,16 @@ function ProductDetails() {
             </p>
 
             <div className="mt-4 space-y-2 text-gray-600">
-              <p><strong>{t("age")}:</strong> {product.age}</p>
-              <p><strong>{t("city")}:</strong> {product.city}</p>
-              <p><strong>{t("country")}:</strong> {product.country?.name || t("notAvailable")}</p>
+              <p>
+                <strong>{t("age")}:</strong> {product.age}
+              </p>
+              <p>
+                <strong>{t("city")}:</strong> {product.city}
+              </p>
+              <p>
+                <strong>{t("country")}:</strong>{" "}
+                {product.country?.name || t("notAvailable")}
+              </p>
               <p>
                 <strong>{t("delivery")}:</strong>{" "}
                 {product.deliveryAvailable ? t("available") : t("no")}
@@ -103,7 +109,9 @@ function ProductDetails() {
                 <div>
                   <p className="font-semibold text-gray-900">{sellerName}</p>
                   <p className="text-sm text-gray-600">
-                    {product.phoneNumber || product.seller?.phoneNumber || t("notAvailable")}
+                    {product.phoneNumber ||
+                      product.seller?.phoneNumber ||
+                      t("notAvailable")}
                   </p>
                 </div>
               </div>

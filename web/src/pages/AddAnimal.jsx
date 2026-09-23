@@ -6,19 +6,24 @@ import {
   fetchAnimalVariants,
   fetchPlacesByOwner,
   fetchCagesByOwner,
-  createFarmAnimal,
 } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineCreate, getCachedItems } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
 
-const getAnimalsCacheKey = (userId) => `myFarmAnimalsCache_${userId}`;
-const getAnimalsPendingKey = (userId) => `myFarmAnimalsPending_${userId}`;
+const MODULE_NAME = "animals";
+const ANIMAL_TYPES_CACHE_KEY = "animalTypesCache";
+const ANIMAL_VARIANTS_CACHE_KEY = "animalVariantsCache";
 
 function AddAnimal() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [animalTypes, setAnimalTypes] = useState([]);
   const [animalVariants, setAnimalVariants] = useState([]);
@@ -49,24 +54,39 @@ function AddAnimal() {
 
   useEffect(() => {
     async function loadData() {
-      if (!currentUser) {
+      if (!currentUser?.ID) {
         setMessage(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
 
-      if (!navigator.onLine) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const [types, variants, userPlaces, userCages] = await Promise.all([
-          fetchAnimalTypes(),
-          fetchAnimalVariants(),
-          fetchPlacesByOwner(currentUser.ID),
-          fetchCagesByOwner(currentUser.ID),
-        ]);
+        let types = [];
+        let variants = [];
+        let userPlaces = [];
+        let userCages = [];
+
+        if (isOnline) {
+          [types, variants, userPlaces, userCages] = await Promise.all([
+            fetchAnimalTypes(),
+            fetchAnimalVariants(),
+            fetchPlacesByOwner(currentUser.ID),
+            fetchCagesByOwner(currentUser.ID),
+          ]);
+
+          localStorage.setItem(ANIMAL_TYPES_CACHE_KEY, JSON.stringify(types));
+          localStorage.setItem(
+            ANIMAL_VARIANTS_CACHE_KEY,
+            JSON.stringify(variants)
+          );
+        } else {
+          types = JSON.parse(localStorage.getItem(ANIMAL_TYPES_CACHE_KEY) || "[]");
+          variants = JSON.parse(
+            localStorage.getItem(ANIMAL_VARIANTS_CACHE_KEY) || "[]"
+          );
+          userPlaces = getCachedItems("places", currentUser.ID);
+          userCages = getCachedItems("cages", currentUser.ID);
+        }
 
         setAnimalTypes(types);
         setAnimalVariants(variants);
@@ -93,6 +113,8 @@ function AddAnimal() {
           place_ID: firstPlaceId,
           cage_ID: initialCages.length > 0 ? initialCages[0].ID : "",
         }));
+
+        setMessage("");
       } catch (error) {
         console.error(error);
         setMessage(t("failedToLoadAnimalFormData"));
@@ -102,7 +124,7 @@ function AddAnimal() {
     }
 
     loadData();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -166,8 +188,16 @@ function AddAnimal() {
     setSubmitting(true);
     setMessage("");
 
-    if (!currentUser) {
+    if (!currentUser?.ID) {
       setMessage(t("mustBeLoggedInToAddAnimals"));
+      setSubmitting(false);
+      return;
+    }
+
+    const parsedQuantity = parseInt(formData.quantity, 10);
+
+    if (Number.isNaN(parsedQuantity) || parsedQuantity < 1) {
+      setMessage(t("invalidQuantity"));
       setSubmitting(false);
       return;
     }
@@ -179,10 +209,9 @@ function AddAnimal() {
       groupNumber: formData.groupNumber,
       age: formData.age,
       sourceType: formData.sourceType,
-      quantity: parseInt(formData.quantity, 10),
+      quantity: parsedQuantity,
       notes: formData.notes,
       photoUrl: formData.photoUrl,
-      syncAction: "create",
     };
 
     if (formData.variant_ID) payload.variant_ID = formData.variant_ID;
@@ -190,32 +219,32 @@ function AddAnimal() {
     if (formData.cage_ID) payload.cage_ID = formData.cage_ID;
 
     try {
-      if (!navigator.onLine) {
-        const cacheKey = getAnimalsCacheKey(currentUser.ID);
-        const pendingKey = getAnimalsPendingKey(currentUser.ID);
+      if (!isOnline) {
+        const selectedPlace = places.find((place) => place.ID === formData.place_ID);
+        const selectedCage = cages.find((cage) => cage.ID === formData.cage_ID);
 
-        const cachedAnimals = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-        const pendingAnimals = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+        if (selectedPlace?.ID?.startsWith?.("offline-")) {
+          setMessage(t("cannotLinkAnimalToUnsyncedPlace"));
+          setSubmitting(false);
+          return;
+        }
 
-        const offlineAnimal = {
-          ID: `offline-${Date.now()}`,
+        if (selectedCage?.ID?.startsWith?.("offline-")) {
+          setMessage(t("cannotLinkAnimalToUnsyncedCage"));
+          setSubmitting(false);
+          return;
+        }
+
+        addOfflineCreate(MODULE_NAME, currentUser.ID, {
           ...payload,
-          pendingSync: true,
           animalType:
             animalTypes.find((type) => type.ID === formData.animalType_ID) || null,
           variant:
-            animalVariants.find((variant) => variant.ID === formData.variant_ID) || null,
-          place:
-            places.find((place) => place.ID === formData.place_ID) || null,
-          cage:
-            cages.find((cage) => cage.ID === formData.cage_ID) || null,
-        };
-
-        const updatedCache = [offlineAnimal, ...cachedAnimals];
-        const updatedPending = [offlineAnimal, ...pendingAnimals];
-
-        localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
-        localStorage.setItem(pendingKey, JSON.stringify(updatedPending));
+            animalVariants.find((variant) => variant.ID === formData.variant_ID) ||
+            null,
+          place: selectedPlace || null,
+          cage: selectedCage || null,
+        });
 
         setMessage(t("animalSavedOffline"));
 
@@ -226,7 +255,7 @@ function AddAnimal() {
         return;
       }
 
-      await createFarmAnimal(payload);
+      await config.createFn(payload);
 
       setMessage(t("animalAddedSuccessfully"));
 
@@ -250,7 +279,7 @@ function AddAnimal() {
         ← {t("back")}
       </button>
 
-      {!navigator.onLine && (
+      {!isOnline && (
         <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
           <p className="text-orange-700 font-semibold">
             {t("offlineAnimalsMode")}
@@ -454,6 +483,7 @@ function AddAnimal() {
                 placeholder={t("enterQuantity")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
                 required
+                min="1"
               />
             </div>
 

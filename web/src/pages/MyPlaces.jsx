@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { fetchPlacesByOwner, deletePlace } from "../services/api";
 import PageHeader from "../components/PageHeader";
 import BottomNav from "../components/BottomNav";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import {
+  loadWithOfflineSupport,
+  addOfflineDelete,
+  setCachedItems,
+} from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const MODULE_NAME = "places";
 
 function MyPlaces() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,15 +27,32 @@ function MyPlaces() {
 
   useEffect(() => {
     async function loadPlaces() {
-      if (!currentUser) {
+      if (!currentUser?.ID) {
         setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
 
       try {
-        const data = await fetchPlacesByOwner(currentUser.ID);
-        setPlaces(data);
+        const result = await loadWithOfflineSupport({
+          moduleName: MODULE_NAME,
+          userId: currentUser.ID,
+          fetchFn: () => config.fetchFn(currentUser.ID),
+          syncConfig: {
+            createFn: config.createFn,
+            updateFn: config.updateFn,
+            deleteFn: config.deleteFn,
+            buildPayload: config.buildPayload,
+          },
+        });
+
+        setPlaces(result.items);
+
+        if (!isOnline && result.empty) {
+          setError(t("noOfflinePlacesAvailable"));
+        } else {
+          setError("");
+        }
       } catch (err) {
         console.error(err);
         setError(t("failedToLoadPlaces"));
@@ -36,18 +62,35 @@ function MyPlaces() {
     }
 
     loadPlaces();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline, config]);
 
   async function handleDelete(placeId) {
     const confirmed = window.confirm(t("areYouSureDeletePlace"));
-    if (!confirmed) return;
+    if (!confirmed || !currentUser?.ID) return;
+
+    const currentPlace = places.find((place) => place.ID === placeId);
+    if (!currentPlace) return;
+
+    if (!isOnline) {
+      const updatedCache = addOfflineDelete(
+        MODULE_NAME,
+        currentUser.ID,
+        placeId,
+        currentPlace
+      );
+      setPlaces(updatedCache);
+      setError("");
+      return;
+    }
 
     try {
-      await deletePlace(placeId);
-      setPlaces((prev) => prev.filter((place) => place.ID !== placeId));
+      await config.deleteFn(placeId);
+      const updatedPlaces = places.filter((place) => place.ID !== placeId);
+      setPlaces(updatedPlaces);
+      setCachedItems(MODULE_NAME, currentUser.ID, updatedPlaces);
     } catch (error) {
       console.error(error);
-      setError(t("failedToDeletePlace"));
+      setError(`${t("failedToDeletePlace")}: ${error.message}`);
     }
   }
 
@@ -58,6 +101,17 @@ function MyPlaces() {
         subtitle={t("managePlaces")}
         backTo="/my-farm"
       />
+
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
+          <p className="text-orange-700 font-semibold">
+            {t("offlinePlacesMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("showingCachedPlaces")}
+          </p>
+        </div>
+      )}
 
       <div className="mb-6">
         <button
@@ -82,13 +136,19 @@ function MyPlaces() {
               key={place.ID}
               className="bg-white rounded-[24px] shadow-sm p-5 border border-green-50"
             >
-              <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-3">
-                {t("place")}
-              </span>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1">
+                  {t("place")}
+                </span>
 
-              <h2 className="text-xl font-bold text-gray-900">
-                {place.name}
-              </h2>
+                {place.pendingSync && (
+                  <span className="inline-block bg-orange-100 text-orange-700 text-xs font-medium rounded-full px-3 py-1">
+                    {t("pendingSync")}
+                  </span>
+                )}
+              </div>
+
+              <h2 className="text-xl font-bold text-gray-900">{place.name}</h2>
 
               <p className="text-sm text-gray-600 mt-2">
                 <strong>{t("placeNumber")}:</strong> {place.placeNumber}

@@ -1,41 +1,81 @@
 import BottomNav from "../components/BottomNav";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getCurrentUser } from "../services/auth";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
+import { getCurrentUser } from "../services/auth";
 import useOnlineStatus from "../hooks/useOnlineStatus";
-import { addOfflineCreate } from "../utils/offlineSync";
+import { addOfflineUpdate } from "../utils/offlineSync";
 import { offlineModules } from "../utils/offlineModules";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
 
-const MODULE_NAME = "equipments";
+const MODULE_NAME = "incubators";
 
-function AddEquipment() {
+function EditIncubator() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const { id } = useParams();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
   const isOnline = useOnlineStatus();
   const config = offlineModules[MODULE_NAME];
 
+  const incubator = getEntityFromStateOrCache({
+    state,
+    stateKey: "incubator",
+    id,
+    moduleName: MODULE_NAME,
+    userId: currentUser?.ID,
+  });
+
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoPreview, setPhotoPreview] = useState(incubator?.photoUrl || "");
 
   const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    condition: "New",
-    quantity: "",
-    notes: "",
-    photoUrl: "",
+    name: incubator?.name || "",
+    condition: incubator?.condition || "New",
+    capacity: incubator?.capacity || "",
+    notes: incubator?.notes || "",
+    photoUrl: incubator?.photoUrl || "",
   });
+
+  useEffect(() => {
+    if (!incubator) return;
+
+    setPhotoPreview(incubator.photoUrl || "");
+    setFormData({
+      name: incubator.name || "",
+      condition: incubator.condition || "New",
+      capacity: incubator.capacity || "",
+      notes: incubator.notes || "",
+      photoUrl: incubator.photoUrl || "",
+    });
+  }, [incubator]);
+
+  if (!incubator) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8f2] px-4 pb-24">
+        <div className="bg-white p-6 rounded-[28px] shadow-sm text-center max-w-md w-full">
+          <p className="text-xl font-semibold text-green-900">
+            {t("incubatorNotFound")}
+          </p>
+          <button
+            onClick={() => navigate("/my-farm/incubators")}
+            className="mt-4 bg-green-700 text-white px-5 py-3 rounded-full"
+          >
+            {t("back")}
+          </button>
+        </div>
+
+        <BottomNav />
+      </div>
+    );
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handlePhotoChange(e) {
@@ -61,53 +101,45 @@ function AddEquipment() {
     setSubmitting(true);
     setMessage("");
 
-    if (!currentUser?.ID) {
-      setMessage(t("mustBeLoggedInToAddEquipment"));
-      setSubmitting(false);
-      return;
-    }
+    const parsedCapacity = parseInt(formData.capacity, 10);
 
-    const parsedQuantity = parseInt(formData.quantity, 10);
-
-    if (Number.isNaN(parsedQuantity) || parsedQuantity < 1) {
-      setMessage(t("invalidQuantity"));
+    if (Number.isNaN(parsedCapacity) || parsedCapacity < 1) {
+      setMessage(t("invalidCapacity"));
       setSubmitting(false);
       return;
     }
 
     const payload = {
-      owner_ID: currentUser.ID,
       name: formData.name,
-      category: formData.category,
       condition: formData.condition,
-      quantity: parsedQuantity,
+      capacity: parsedCapacity,
       notes: formData.notes,
       photoUrl: formData.photoUrl,
     };
 
     try {
-      if (!isOnline) {
-        addOfflineCreate(MODULE_NAME, currentUser.ID, payload);
+      if (!isOnline && currentUser?.ID) {
+        addOfflineUpdate(MODULE_NAME, currentUser.ID, incubator, payload);
 
-        setMessage(t("equipmentSavedOffline"));
+        setMessage(t("incubatorUpdatedOffline"));
 
         setTimeout(() => {
-          navigate("/my-farm/equipments");
+          navigate("/my-farm/incubators");
         }, 1000);
 
         return;
       }
 
-      await config.createFn(payload);
+      await config.updateFn(incubator.ID, payload);
 
-      setMessage(t("equipmentAddedSuccessfully"));
+      setMessage(t("incubatorUpdatedSuccessfully"));
 
       setTimeout(() => {
-        navigate("/my-farm/equipments");
+        navigate("/my-farm/incubators");
       }, 1000);
     } catch (error) {
-      console.error("Add equipment error:", error);
-      setMessage(`${t("failedToAddEquipment")}: ${error.message}`);
+      console.error(error);
+      setMessage(`${t("failedToUpdateIncubator")}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -116,7 +148,7 @@ function AddEquipment() {
   return (
     <div className="min-h-screen bg-[#f7f8f2] p-4 pb-24">
       <button
-        onClick={() => navigate("/my-farm/equipments")}
+        onClick={() => navigate("/my-farm/incubators")}
         className="mb-4 text-green-800 font-medium"
       >
         ← {t("back")}
@@ -125,24 +157,23 @@ function AddEquipment() {
       {!isOnline && (
         <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
           <p className="text-orange-700 font-semibold">
-            {t("offlineEquipmentsMode")}
+            {t("offlineIncubatorsMode")}
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            {t("newEquipmentsWillBeSavedOffline")}
+            {t("incubatorUpdatesWillBeSavedOffline")}
           </p>
         </div>
       )}
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
-          {t("addEquipment")}
+          {t("editIncubator")}
         </h1>
-        <p className="text-gray-600 mb-6">{t("addEquipmentSubtitle")}</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t("equipmentPhoto")}
+              {t("incubatorPhoto")}
             </label>
 
             <div className="flex flex-col items-center gap-3">
@@ -150,18 +181,18 @@ function AddEquipment() {
                 {photoPreview ? (
                   <img
                     src={photoPreview}
-                    alt={t("equipmentPreview")}
+                    alt={t("incubatorPreview")}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-green-700 text-sm">
-                    {t("noEquipmentPhotoSelected")}
+                    {t("noIncubatorPhotoSelected")}
                   </span>
                 )}
               </div>
 
               <label className="inline-block cursor-pointer bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition">
-                {t("uploadEquipmentPhoto")}
+                {t("changePhoto")}
                 <input
                   type="file"
                   accept="image/*"
@@ -171,36 +202,20 @@ function AddEquipment() {
               </label>
 
               <p className="text-xs text-gray-500 text-center">
-                {t("equipmentPhotoPreviewNote")}
+                {t("incubatorPhotoPreviewNote")}
               </p>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("equipmentName")}
+              {t("incubatorName")}
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder={t("enterEquipmentName")}
-              className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("category")}
-            </label>
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              placeholder={t("equipmentCategoryExample")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
             />
@@ -223,14 +238,13 @@ function AddEquipment() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("quantity")}
+              {t("capacity")}
             </label>
             <input
               type="number"
-              name="quantity"
-              value={formData.quantity}
+              name="capacity"
+              value={formData.capacity}
               onChange={handleChange}
-              placeholder={t("enterQuantity")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
               min="1"
@@ -246,23 +260,20 @@ function AddEquipment() {
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              placeholder={t("equipmentNotesPlaceholder")}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
             ></textarea>
           </div>
 
           {message && (
-            <p className="text-sm font-medium text-center text-green-700">
-              {message}
-            </p>
+            <p className="text-sm text-center text-green-700">{message}</p>
           )}
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
+            className="w-full bg-green-700 text-white py-3 rounded-full font-semibold"
           >
-            {submitting ? t("adding") : t("addEquipment")}
+            {submitting ? t("saving") : t("saveChanges")}
           </button>
         </form>
       </div>
@@ -272,4 +283,4 @@ function AddEquipment() {
   );
 }
 
-export default AddEquipment;
+export default EditIncubator;

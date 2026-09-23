@@ -2,14 +2,19 @@ import BottomNav from "../components/BottomNav";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { createPlace } from "../services/api";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineCreate } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const MODULE_NAME = "places";
 
 function AddPlace() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -33,7 +38,7 @@ function AddPlace() {
     setSubmitting(true);
     setMessage("");
 
-    if (!currentUser) {
+    if (!currentUser?.ID) {
       setMessage(t("mustBeLoggedInToAddPlace"));
       setSubmitting(false);
       return;
@@ -47,7 +52,19 @@ function AddPlace() {
         description: formData.description,
       };
 
-      await createPlace(payload);
+      if (!isOnline) {
+        addOfflineCreate(MODULE_NAME, currentUser.ID, payload);
+
+        setMessage(t("placeSavedOffline"));
+
+        setTimeout(() => {
+          navigate("/my-farm/places");
+        }, 1000);
+
+        return;
+      }
+
+      await config.createFn(payload);
 
       setMessage(t("placeAddedSuccessfully"));
 
@@ -71,13 +88,22 @@ function AddPlace() {
         ← {t("back")}
       </button>
 
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlinePlacesMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("newPlacesWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
           {t("addPlace")}
         </h1>
-        <p className="text-gray-600 mb-6">
-          {t("addPlaceSubtitle")}
-        </p>
+        <p className="text-gray-600 mb-6">{t("addPlaceSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

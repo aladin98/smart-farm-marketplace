@@ -5,19 +5,22 @@ import {
   fetchLearningCategories,
   fetchLearningArticles,
 } from "../services/api";
-import { getCurrentUser, isAdmin } from "../services/auth";
+import { isAdmin } from "../services/auth";
 import fallbackImage from "../assets/images/fallback-product.jpg";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { getCachedItems, setCachedItems } from "../utils/offlineSync";
 
 const LEARNING_CATEGORIES_CACHE_KEY = "learningCategoriesCache";
-const LEARNING_ARTICLES_CACHE_KEY = "learningArticlesCache";
+const MODULE_NAME = "learning";
+const GLOBAL_SCOPE = "global";
 
 function Learning() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const currentUser = getCurrentUser();
   const canManageLearning = isAdmin();
+  const isOnline = useOnlineStatus();
 
   const [categories, setCategories] = useState([]);
   const [articles, setArticles] = useState([]);
@@ -25,39 +28,18 @@ function Learning() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
-
-  useEffect(() => {
-    function handleOnline() {
-      setIsOfflineMode(false);
-    }
-
-    function handleOffline() {
-      setIsOfflineMode(true);
-    }
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
 
   useEffect(() => {
     async function loadLearning() {
       setLoading(true);
       setError("");
 
-      if (!navigator.onLine) {
+      if (!isOnline) {
         try {
           const cachedCategories = JSON.parse(
             localStorage.getItem(LEARNING_CATEGORIES_CACHE_KEY) || "[]"
           );
-          const cachedArticles = JSON.parse(
-            localStorage.getItem(LEARNING_ARTICLES_CACHE_KEY) || "[]"
-          );
+          const cachedArticles = getCachedItems(MODULE_NAME, GLOBAL_SCOPE);
 
           setCategories(cachedCategories);
           setArticles(cachedArticles);
@@ -88,10 +70,7 @@ function Learning() {
           LEARNING_CATEGORIES_CACHE_KEY,
           JSON.stringify(cats)
         );
-        localStorage.setItem(
-          LEARNING_ARTICLES_CACHE_KEY,
-          JSON.stringify(arts)
-        );
+        setCachedItems(MODULE_NAME, GLOBAL_SCOPE, arts);
       } catch (err) {
         console.error(err);
 
@@ -99,14 +78,11 @@ function Learning() {
           const cachedCategories = JSON.parse(
             localStorage.getItem(LEARNING_CATEGORIES_CACHE_KEY) || "[]"
           );
-          const cachedArticles = JSON.parse(
-            localStorage.getItem(LEARNING_ARTICLES_CACHE_KEY) || "[]"
-          );
+          const cachedArticles = getCachedItems(MODULE_NAME, GLOBAL_SCOPE);
 
           if (cachedCategories.length > 0 || cachedArticles.length > 0) {
             setCategories(cachedCategories);
             setArticles(cachedArticles);
-            setIsOfflineMode(true);
           } else {
             setError(t("failedToLoadLearningContent"));
           }
@@ -119,7 +95,7 @@ function Learning() {
     }
 
     loadLearning();
-  }, [t]);
+  }, [t, isOnline]);
 
   const filteredArticles =
     selectedCategory === "All"
@@ -138,7 +114,7 @@ function Learning() {
         backTo="/"
       />
 
-      {isOfflineMode && (
+      {!isOnline && (
         <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
           <p className="text-orange-700 font-semibold">
             {t("offlineLearningMode")}
@@ -149,7 +125,7 @@ function Learning() {
         </div>
       )}
 
-      {canManageLearning && navigator.onLine && (
+      {canManageLearning && isOnline && (
         <div className="mb-6">
           <button
             onClick={() => navigate("/learning/add")}
@@ -216,7 +192,10 @@ function Learning() {
               <div className="p-4">
                 <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-2">
                   {article.category?.name
-                    ? t(`learningCategory.${article.category.name}`, article.category.name)
+                    ? t(
+                        `learningCategory.${article.category.name}`,
+                        article.category.name
+                      )
                     : t("learning")}
                 </span>
 

@@ -2,15 +2,24 @@ import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/auth";
-import { fetchCagesByOwner, deleteCage } from "../services/api";
 import PageHeader from "../components/PageHeader";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import {
+  loadWithOfflineSupport,
+  addOfflineDelete,
+  setCachedItems,
+} from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+
+const MODULE_NAME = "cages";
 
 function MyCages() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
 
   const [cages, setCages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,15 +27,32 @@ function MyCages() {
 
   useEffect(() => {
     async function loadCages() {
-      if (!currentUser) {
+      if (!currentUser?.ID) {
         setError(t("noLoggedUserFound"));
         setLoading(false);
         return;
       }
 
       try {
-        const data = await fetchCagesByOwner(currentUser.ID);
-        setCages(data);
+        const result = await loadWithOfflineSupport({
+          moduleName: MODULE_NAME,
+          userId: currentUser.ID,
+          fetchFn: () => config.fetchFn(currentUser.ID),
+          syncConfig: {
+            createFn: config.createFn,
+            updateFn: config.updateFn,
+            deleteFn: config.deleteFn,
+            buildPayload: config.buildPayload,
+          },
+        });
+
+        setCages(result.items);
+
+        if (!isOnline && result.empty) {
+          setError(t("noOfflineCagesAvailable"));
+        } else {
+          setError("");
+        }
       } catch (err) {
         console.error(err);
         setError(t("failedToLoadCages"));
@@ -36,18 +62,35 @@ function MyCages() {
     }
 
     loadCages();
-  }, [currentUser, t]);
+  }, [currentUser, t, isOnline, config]);
 
   async function handleDelete(cageId) {
     const confirmed = window.confirm(t("areYouSureDeleteCage"));
-    if (!confirmed) return;
+    if (!confirmed || !currentUser?.ID) return;
+
+    const currentCage = cages.find((cage) => cage.ID === cageId);
+    if (!currentCage) return;
+
+    if (!isOnline) {
+      const updatedCache = addOfflineDelete(
+        MODULE_NAME,
+        currentUser.ID,
+        cageId,
+        currentCage
+      );
+      setCages(updatedCache);
+      setError("");
+      return;
+    }
 
     try {
-      await deleteCage(cageId);
-      setCages((prev) => prev.filter((cage) => cage.ID !== cageId));
+      await config.deleteFn(cageId);
+      const updatedCages = cages.filter((cage) => cage.ID !== cageId);
+      setCages(updatedCages);
+      setCachedItems(MODULE_NAME, currentUser.ID, updatedCages);
     } catch (error) {
       console.error(error);
-      setError(t("failedToDeleteCage"));
+      setError(`${t("failedToDeleteCage")}: ${error.message}`);
     }
   }
 
@@ -58,6 +101,17 @@ function MyCages() {
         subtitle={t("manageCages")}
         backTo="/my-farm"
       />
+
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineCagesMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("showingCachedCages")}
+          </p>
+        </div>
+      )}
 
       <div className="mb-6">
         <button
@@ -82,9 +136,17 @@ function MyCages() {
               key={cage.ID}
               className="bg-white rounded-[24px] shadow-sm p-5 border border-green-50"
             >
-              <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1 mb-3">
-                {t("cage")}
-              </span>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className="inline-block bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1">
+                  {t("cage")}
+                </span>
+
+                {cage.pendingSync && (
+                  <span className="inline-block bg-orange-100 text-orange-700 text-xs font-medium rounded-full px-3 py-1">
+                    {t("pendingSync")}
+                  </span>
+                )}
+              </div>
 
               <h2 className="text-xl font-bold text-gray-900">
                 {cage.cageNumber}

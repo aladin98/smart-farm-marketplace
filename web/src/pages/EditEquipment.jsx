@@ -1,15 +1,32 @@
 import BottomNav from "../components/BottomNav";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { updateEquipment } from "../services/api";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { resizeImage } from "../utils/image";
+import { getCurrentUser } from "../services/auth";
+import useOnlineStatus from "../hooks/useOnlineStatus";
+import { addOfflineUpdate } from "../utils/offlineSync";
+import { offlineModules } from "../utils/offlineModules";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
+
+const MODULE_NAME = "equipments";
 
 function EditEquipment() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const equipment = state?.equipment;
+  const { id } = useParams();
+  const currentUser = getCurrentUser();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const config = offlineModules[MODULE_NAME];
+
+  const equipment = getEntityFromStateOrCache({
+    state,
+    stateKey: "equipment",
+    id,
+    moduleName: MODULE_NAME,
+    userId: currentUser?.ID,
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -23,6 +40,20 @@ function EditEquipment() {
     notes: equipment?.notes || "",
     photoUrl: equipment?.photoUrl || "",
   });
+
+  useEffect(() => {
+    if (!equipment) return;
+
+    setPhotoPreview(equipment.photoUrl || "");
+    setFormData({
+      name: equipment.name || "",
+      category: equipment.category || "",
+      condition: equipment.condition || "New",
+      quantity: equipment.quantity || "",
+      notes: equipment.notes || "",
+      photoUrl: equipment.photoUrl || "",
+    });
+  }, [equipment]);
 
   if (!equipment) {
     return (
@@ -72,15 +103,37 @@ function EditEquipment() {
     setSubmitting(true);
     setMessage("");
 
+    const parsedQuantity = parseInt(formData.quantity, 10);
+
+    if (Number.isNaN(parsedQuantity) || parsedQuantity < 1) {
+      setMessage(t("invalidQuantity"));
+      setSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      condition: formData.condition,
+      quantity: parsedQuantity,
+      notes: formData.notes,
+      photoUrl: formData.photoUrl,
+    };
+
     try {
-      await updateEquipment(equipment.ID, {
-        name: formData.name,
-        category: formData.category,
-        condition: formData.condition,
-        quantity: parseInt(formData.quantity, 10),
-        notes: formData.notes,
-        photoUrl: formData.photoUrl,
-      });
+      if (!isOnline && currentUser?.ID) {
+        addOfflineUpdate(MODULE_NAME, currentUser.ID, equipment, payload);
+
+        setMessage(t("equipmentUpdatedOffline"));
+
+        setTimeout(() => {
+          navigate("/my-farm/equipments");
+        }, 1000);
+
+        return;
+      }
+
+      await config.updateFn(equipment.ID, payload);
 
       setMessage(t("equipmentUpdatedSuccessfully"));
 
@@ -103,6 +156,17 @@ function EditEquipment() {
       >
         ← {t("back")}
       </button>
+
+      {!isOnline && (
+        <div className="bg-white rounded-[24px] p-4 text-center shadow-sm border border-orange-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-orange-700 font-semibold">
+            {t("offlineEquipmentsMode")}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("equipmentUpdatesWillBeSavedOffline")}
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-[28px] p-5 shadow-sm max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-green-950 mb-2">
@@ -200,6 +264,7 @@ function EditEquipment() {
               onChange={handleChange}
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
               required
+              min="1"
             />
           </div>
 

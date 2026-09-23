@@ -1,18 +1,28 @@
 import BottomNav from "../components/BottomNav";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   fetchIncubationCyclesByIncubator,
   deleteIncubationCycle,
 } from "../services/api";
 import { useTranslation } from "react-i18next";
-import { resizeImage } from "../utils/image";
+import { getCurrentUser } from "../services/auth";
+import { getEntityFromStateOrCache } from "../utils/getEntityFromStateOrCache";
 
 function IncubationCycles() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const incubator = state?.incubator;
+  const { id } = useParams();
   const { t } = useTranslation();
+  const currentUser = getCurrentUser();
+
+  const incubator = getEntityFromStateOrCache({
+    state,
+    stateKey: "incubator",
+    id,
+    moduleName: "incubators",
+    userId: currentUser?.ID,
+  });
 
   const [cycles, setCycles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +39,7 @@ function IncubationCycles() {
       try {
         const data = await fetchIncubationCyclesByIncubator(incubator.ID);
         setCycles(data);
+        setError("");
       } catch (err) {
         console.error(err);
         setError(t("failedToLoadIncubationCycles"));
@@ -49,7 +60,7 @@ function IncubationCycles() {
       setCycles((prev) => prev.filter((cycle) => cycle.ID !== cycleId));
     } catch (error) {
       console.error(error);
-      setError(t("failedToDeleteCycle"));
+      setError(`${t("failedToDeleteCycle")}: ${error.message}`);
     }
   }
 
@@ -127,11 +138,21 @@ function IncubationCycles() {
               </h2>
 
               <div className="mt-3 space-y-2 text-sm text-gray-600">
-                <p><strong>{t("startDate")}:</strong> {cycle.startDate}</p>
-                <p><strong>{t("checkDate")}:</strong> {cycle.checkDate}</p>
-                <p><strong>{t("stopDate")}:</strong> {cycle.stopDate}</p>
-                <p><strong>{t("hatchDate")}:</strong> {cycle.hatchDate}</p>
-                <p><strong>{t("notes")}:</strong> {cycle.notes || t("noNotes")}</p>
+                <p>
+                  <strong>{t("startDate")}:</strong> {cycle.startDate}
+                </p>
+                <p>
+                  <strong>{t("checkDate")}:</strong> {cycle.checkDate}
+                </p>
+                <p>
+                  <strong>{t("stopDate")}:</strong> {cycle.stopDate}
+                </p>
+                <p>
+                  <strong>{t("hatchDate")}:</strong> {cycle.hatchDate}
+                </p>
+                <p>
+                  <strong>{t("notes")}:</strong> {cycle.notes || t("noNotes")}
+                </p>
               </div>
 
               <div className="mt-4 flex gap-3">
