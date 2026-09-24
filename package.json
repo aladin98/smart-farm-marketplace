@@ -14,7 +14,7 @@
     "cds-plugin-ui5": "^0.17.0"
   },
   "scripts": {
-    "start": "cds deploy && cds serve",
+    "start": "cds serve",
     "watch-products-ui": "cds watch --open smartfarm.marketplace.productsui/index.html?sap-ui-xx-viewCache=false --livereload false"
   },
   "cds": {
