@@ -7,13 +7,7 @@ const { SELECT } = cds.ql;
 cds.on("bootstrap", (app) => {
   app.use(
     cors({
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:4173",
-        "https://port4173-workspaces-ws-c97u5.eu10.applicationstudio.cloud.sap",
-        "https://port5173-workspaces-ws-c97u5.eu10.applicationstudio.cloud.sap",
-        "https://smart-farm-marketplaces.vercel.app",
-      ],
+      origin: true,
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "x-user-email"],
       credentials: false,
