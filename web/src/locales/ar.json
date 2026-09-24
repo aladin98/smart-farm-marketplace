@@ -437,6 +437,16 @@
 "selectCountry": "اختر دولة",
 "pleaseSelectCountry": "يرجى اختيار الدولة.",
 "noCountriesAvailable": "لا توجد دول متاحة حالياً.",
+  "resetYourPassword": "أعد تعيين كلمة المرور الخاصة بك",
+  "newPassword": "كلمة المرور الجديدة",
+  "enterNewPassword": "أدخل كلمة المرور الجديدة",
+  "confirmYourPassword": "أكد كلمة المرور",
+  "resetPassword": "إعادة تعيين كلمة المرور",
+  "passwordResetSuccess": "تمت إعادة تعيين كلمة المرور بنجاح",
+  "passwordResetFailed": "فشل في إعادة تعيين كلمة المرور",
+  "backToLogin": "العودة إلى تسجيل الدخول",
+  "show": "إظهار",
+  "hide": "إخفاء",
 
   "categoriesMap": {
     "All": "الكل",

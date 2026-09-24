@@ -437,6 +437,17 @@
 "selectCountry": "Sélectionnez un pays",
 "pleaseSelectCountry": "Veuillez sélectionner un pays.",
 "noCountriesAvailable": "Aucun pays n’est disponible pour le moment.",
+  "resetYourPassword": "Réinitialisez votre mot de passe",
+  "newPassword": "Nouveau mot de passe",
+  "enterNewPassword": "Entrez votre nouveau mot de passe",
+  "confirmYourPassword": "Confirmez votre mot de passe",
+  "resetPassword": "Réinitialiser le mot de passe",
+  "passwordResetSuccess": "Mot de passe réinitialisé avec succès",
+  "passwordResetFailed": "Échec de la réinitialisation du mot de passe",
+  "backToLogin": "Retour à la connexion",
+  "show": "Afficher",
+  "hide": "Masquer",
+
 
   "categoriesMap": {
     "All": "Tous",

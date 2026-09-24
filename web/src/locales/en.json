@@ -437,6 +437,15 @@
 "selectCountry": "Select a country",
 "pleaseSelectCountry": "Please select a country.",
 "noCountriesAvailable": "No countries available at the moment.",
+  "show": "Show",
+  "hide": "Hide",
+  "resetYourPassword": "Reset your password",
+  "newPassword": "New password",
+  "enterNewPassword": "Enter new password",
+  "resetPassword": "Reset password",
+  "passwordResetSuccess": "Password reset successfully",
+  "passwordResetFailed": "Failed to reset password",
+  "backToLogin": "Back to login",
 
   "categoriesMap": {
     "All": "All",

@@ -52,6 +52,7 @@ import OwnerRoute from "./components/OwnerRoute";
 import AdminRoute from "./components/AdminRoute";
 import OfflineSyncBootstrap from "./components/OfflineSyncBootstrap";
 import useOnlineStatus from "./hooks/useOnlineStatus";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function MarketplaceHome() {
   const navigate = useNavigate();
@@ -501,6 +502,7 @@ function App() {
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </>
   );

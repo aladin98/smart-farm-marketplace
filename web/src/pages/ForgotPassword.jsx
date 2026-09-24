@@ -2,18 +2,20 @@ import LanguageSwitcher from "../components/LanguageSwitcher";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { authenticateUser, refreshCurrentUser } from "../services/auth";
+import { resetPasswordRequest } from "../services/api";
 
-function Login() {
+function ForgotPassword() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -26,35 +28,30 @@ function Login() {
     }));
   }
 
-  async function handleLogin(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setSubmitting(true);
     setMessage("");
     setIsError(false);
 
+    if (formData.newPassword !== formData.confirmPassword) {
+      setMessage(t("passwordsDoNotMatch"));
+      setIsError(true);
+      return;
+    }
+
+    setSubmitting(true);
+
     try {
-      const matchedUser = await authenticateUser(
-        formData.email,
-        formData.password
-      );
-
-      if (!matchedUser) {
-        setMessage(t("invalidEmailOrPassword"));
-        setIsError(true);
-        return;
-      }
-
-      await refreshCurrentUser();
-
-      setMessage(t("loginSuccess"));
+      await resetPasswordRequest(formData.email, formData.newPassword);
+      setMessage(t("passwordResetSuccess"));
       setIsError(false);
 
       setTimeout(() => {
-        navigate("/");
-      }, 800);
+        navigate("/login");
+      }, 1200);
     } catch (error) {
       console.error(error);
-      setMessage(t("loginFailed"));
+      setMessage(t("passwordResetFailed"));
       setIsError(true);
     } finally {
       setSubmitting(false);
@@ -71,13 +68,12 @@ function Login() {
         <div className="bg-white rounded-[28px] shadow-sm p-6">
           <div className="text-center mb-6">
             <h1 className="text-4xl font-bold text-green-900">
-              {t("appName")}
+              {t("forgotPassword")}
             </h1>
-            <p className="text-lg text-green-700">{t("marketplace")}</p>
-            <p className="text-gray-500 mt-3">{t("welcomeBackLogin")}</p>
+            <p className="text-gray-500 mt-3">{t("resetYourPassword")}</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("email")}
@@ -96,37 +92,49 @@ function Login() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  {t("password")}
+                  {t("newPassword")}
                 </label>
-
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
+                  onClick={() => setShowNewPassword((prev) => !prev)}
                   className="text-sm text-green-700 font-medium"
                 >
-                  {showPassword ? t("hide") : t("show")}
+                  {showNewPassword ? t("hide") : t("show")}
                 </button>
               </div>
-
               <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
+                type={showNewPassword ? "text" : "password"}
+                name="newPassword"
+                value={formData.newPassword}
                 onChange={handleChange}
-                placeholder={t("enterYourPassword")}
+                placeholder={t("enterNewPassword")}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
                 required
               />
             </div>
 
-            <div className="text-right">
-              <button
-                type="button"
-                onClick={() => navigate("/forgot-password")}
-                className="text-sm text-green-700 font-medium"
-              >
-                {t("forgotPassword")}
-              </button>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {t("confirmPassword")}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="text-sm text-green-700 font-medium"
+                >
+                  {showConfirmPassword ? t("hide") : t("show")}
+                </button>
+              </div>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder={t("confirmYourPassword")}
+                className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
+                required
+              />
             </div>
 
             {message && (
@@ -144,20 +152,17 @@ function Login() {
               disabled={submitting}
               className="w-full bg-green-700 text-white py-3 rounded-full font-semibold text-lg disabled:opacity-50"
             >
-              {submitting ? t("loggingIn") : t("login")}
+              {submitting ? t("saving") : t("resetPassword")}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              {t("dontHaveAccount")}{" "}
-              <button
-                onClick={() => navigate("/register")}
-                className="text-green-700 font-semibold"
-              >
-                {t("createAccount")}
-              </button>
-            </p>
+            <button
+              onClick={() => navigate("/login")}
+              className="text-green-700 font-semibold"
+            >
+              {t("backToLogin")}
+            </button>
           </div>
         </div>
       </div>
@@ -165,4 +170,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default ForgotPassword;

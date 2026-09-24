@@ -1,6 +1,6 @@
 import cds from "@sap/cds";
 
-const { SELECT } = cds.ql;
+const { SELECT, UPDATE } = cds.ql;
 
 export default cds.service.impl(async function () {
   const { Users, LearningArticles } = this.entities;
@@ -18,28 +18,49 @@ export default cds.service.impl(async function () {
     return req.data?.ID || req.params?.[0]?.ID;
   }
 
-  // -----------------------------------
-  // Auth actions
-  // -----------------------------------
   this.on("login", async (req) => {
-  const email = req.data.email?.trim().toLowerCase();
-  const password = req.data.password;
+    const email = req.data.email?.trim().toLowerCase();
+    const password = req.data.password;
 
-  if (!email || !password) {
-    return req.reject(400, "Email and password are required");
-  }
+    if (!email || !password) {
+      return req.reject(400, "Email and password are required");
+    }
 
-  const users = await SELECT.from(Users);
-  const user = users.find(
-    (u) => u.email?.trim().toLowerCase() === email
-  );
+    const users = await SELECT.from(Users);
+    const user = users.find(
+      (u) => u.email?.trim().toLowerCase() === email
+    );
 
-  if (!user || user.passwordHash !== password) {
-    return req.reject(401, "Invalid email or password");
-  }
+    if (!user || user.passwordHash !== password) {
+      return req.reject(401, "Invalid email or password");
+    }
 
-  return user;
-});
+    return user;
+  });
+
+  this.on("resetPassword", async (req) => {
+    const email = req.data.email?.trim().toLowerCase();
+    const newPassword = req.data.newPassword;
+
+    if (!email || !newPassword) {
+      return req.reject(400, "Email and new password are required");
+    }
+
+    const users = await SELECT.from(Users);
+    const user = users.find(
+      (u) => u.email?.trim().toLowerCase() === email
+    );
+
+    if (!user) {
+      return req.reject(404, "User not found");
+    }
+
+    await UPDATE(Users)
+      .set({ passwordHash: newPassword })
+      .where({ ID: user.ID });
+
+    return "Password updated successfully";
+  });
 
   this.on("me", async (req) => {
     const email = getRequestEmail(req);
@@ -56,22 +77,21 @@ export default cds.service.impl(async function () {
 
     return user;
   });
-    this.before("CREATE", Users, async (req) => {
-  const email = req.data?.email;
 
-  if (!email) {
-    return req.reject(400, "Email is required");
-  }
+  this.before("CREATE", Users, async (req) => {
+    const email = req.data?.email;
 
-  const existingUser = await SELECT.one.from(Users).where({ email });
+    if (!email) {
+      return req.reject(400, "Email is required");
+    }
 
-  if (existingUser) {
-    return req.reject(409, "Email already exists");
-  }
-});
-  // -----------------------------------
-  // Learning articles -> admin or owner
-  // -----------------------------------
+    const existingUser = await SELECT.one.from(Users).where({ email });
+
+    if (existingUser) {
+      return req.reject(409, "Email already exists");
+    }
+  });
+
   this.before(["CREATE", "UPDATE", "DELETE"], LearningArticles, async (req) => {
     const email = getRequestEmail(req);
 
@@ -89,11 +109,6 @@ export default cds.service.impl(async function () {
     }
   });
 
-  // -----------------------------------
-  // Users UPDATE
-  // owner can update anyone
-  // others can update only their own profile
-  // -----------------------------------
   this.before("UPDATE", Users, async (req) => {
     const email = getRequestEmail(req);
 
@@ -132,9 +147,6 @@ export default cds.service.impl(async function () {
     }
   });
 
-  // -----------------------------------
-  // Users DELETE -> owner only
-  // -----------------------------------
   this.before("DELETE", Users, async (req) => {
     const email = getRequestEmail(req);
 

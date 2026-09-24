@@ -17,6 +17,6 @@ service marketplace {
   entity LearningArticles   as projection on db.LearningArticles;
 
   action login(email: String, password: String) returns Users;
-function me() returns Users;
-
+  function me() returns Users;
+  action resetPassword(email: String, newPassword: String) returns String;
 }

@@ -685,3 +685,25 @@ export async function deleteIncubator(id) {
 
   return true;
 }
+
+export async function resetPasswordRequest(email, newPassword) {
+  const response = await fetch(`${API_BASE}/resetPassword`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email.trim().toLowerCase(),
+      newPassword,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to reset password: ${response.status} - ${errorText}`
+    );
+  }
+
+  return response.json();
+}
