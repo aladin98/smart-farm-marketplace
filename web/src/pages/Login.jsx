@@ -75,7 +75,6 @@ function Login() {
             </h1>
             <p className="text-lg text-green-700">{t("marketplace")}</p>
             <p className="text-gray-500 mt-3">{t("welcomeBackLogin")}</p>
-            <p className="text-red-500 text-sm mt-2">NEW LOGIN VERSION</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -123,7 +122,7 @@ function Login() {
             <div className="text-right">
               <button
                 type="button"
-                onClick={() => navigate("/forgot-password")}
+                //onClick={() => navigate("/forgot-password")}
                 className="text-sm text-green-700 font-medium"
               >
                 {t("forgotPassword")}
