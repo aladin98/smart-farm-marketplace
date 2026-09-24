@@ -20,7 +20,16 @@
   "cds": {
     "requires": {
       "db": {
-        "kind": "postgres"
+        "kind": "postgres",
+        "impl": "@cap-js/postgres",
+        "pool": {
+          "acquireTimeoutMillis": 10000
+        },
+        "credentials": {
+          "ssl": {
+            "rejectUnauthorized": false
+          }
+        }
       },
       "auth": {
         "kind": "mocked"
