@@ -16,6 +16,7 @@ import { getCurrentUser, refreshCurrentUser } from "./services/auth";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile";
 import ProductDetails from "./pages/ProductDetails";
 import SellProduct from "./pages/SellProduct";
@@ -52,7 +53,6 @@ import OwnerRoute from "./components/OwnerRoute";
 import AdminRoute from "./components/AdminRoute";
 import OfflineSyncBootstrap from "./components/OfflineSyncBootstrap";
 import useOnlineStatus from "./hooks/useOnlineStatus";
-import ForgotPassword from "./pages/ForgotPassword";
 
 function MarketplaceHome() {
   const navigate = useNavigate();
@@ -239,6 +239,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route
           path="/"
@@ -502,7 +503,6 @@ function App() {
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </>
   );
